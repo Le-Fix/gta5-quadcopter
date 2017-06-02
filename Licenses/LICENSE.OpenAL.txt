@@ -1,0 +1,1 @@
+OpenAL Soft is an LGPL-licensed, cross-platform, software implementation of the OpenAL 3D audio API.

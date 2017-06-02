@@ -1,0 +1,6 @@
+Eigen is Free Software. Starting from the 3.1.1 version,
+it is licensed under the MPL2, which is a simple weak
+copyleft license.
+
+If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
