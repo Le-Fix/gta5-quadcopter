@@ -1,0 +1,10 @@
+# Folders
+.vs/
+**/x64/
+
+# Files
+*.tlog
+*.db
+*.o
+*.obj
+*.pdb
