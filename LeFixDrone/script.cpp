@@ -302,7 +302,7 @@ int menu_process_main()
 	data.push_back(&Settings::physxSub);
 	data.push_back(&Settings::visualSub);
 	data.push_back(&Settings::exitSub);
-	//data.push_back(&Settings::debugSub); //INDEV
+	data.push_back(&Settings::debugSub); //INDEV
 
 	data.shrink_to_fit();
 
@@ -1168,7 +1168,7 @@ void menu_process_debug()
 
 	std::vector<menuValue*> data;
 
-	data.push_back(&Settings::Debug);
+	data.push_back(&Settings::debugX);
 
 	data.shrink_to_fit();
 

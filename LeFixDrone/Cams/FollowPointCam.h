@@ -13,8 +13,11 @@ public:
 	void update(const Vector3f& point);
 	void setDistance(float d);
 
+	Vector3f getVel();
+	Vector3f getPos();
+
 private:
-	Vector3f pos;
+	Vector3f pos, vel;
 	float distance;
 };
 

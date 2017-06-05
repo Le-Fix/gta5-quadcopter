@@ -25,9 +25,20 @@ void FollowPointCam::update(const Vector3f& point)
 	{
 		float dT = GAMEPLAY::GET_FRAME_TIME();
 		Vector3f posNew = point + distance*(point - pos).normalized();
-		pos += (posNew - pos) * dT;
+		vel = (posNew - pos);
+		pos += vel*dT;
 
 		CAM_X::SET_CAM_COORD(cam, pos);
 	}
 	CAM_X::POINT_CAM_AT_COORD(cam, point);
+}
+
+Vector3f FollowPointCam::getVel()
+{
+	return vel;
+}
+
+Vector3f FollowPointCam::getPos()
+{
+	return pos;
 }

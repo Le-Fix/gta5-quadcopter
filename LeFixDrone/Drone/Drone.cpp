@@ -512,6 +512,6 @@ void Drone::updateAudioListener()
 	}
 	else if (CAM::IS_CAM_RENDERING(camF.cam))
 	{
-		CAM::GET_TOT
+		AudioHandler::setListener(camF.getPos(), camF.getVel(), cam3RotGlobal);
 	}
 }

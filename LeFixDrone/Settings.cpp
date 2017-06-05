@@ -71,7 +71,7 @@ menuValueS Settings::exitStart		= menuValueS("Go to Start Point");
 
 //DEBUG
 menuValueS Settings::debugSub = menuValueS("Debug");
-menuValueI Settings::Debug = menuValueI(-1, -1, 50, 1, "DEBUG", "x", "X", " ");
+menuValueI Settings::debugX = menuValueI(1, 1, 4, 1, "DEBUG", "x", "X", " ");
 
 void Settings::load()
 {

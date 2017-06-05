@@ -54,7 +54,7 @@ public:
 
 	//DEBUG
 	static menuValueS debugSub;
-	static menuValueI Debug;
+	static menuValueI debugX;
 
 	//SAVE LOAD PATH
 

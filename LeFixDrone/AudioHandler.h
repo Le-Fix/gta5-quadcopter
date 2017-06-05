@@ -21,7 +21,7 @@ public:
 	static void destroy();
 
 	static void loadFile(const char* c);
-	static void setListener(Vector3f pos, Vector3f vel, Quaternionf rot);
+	static void setListener(const Vector3f& pos, const Vector3f& vel, const Quaternionf& rot);
 	static void createBuffer(eRPM rpm);
 
 	static void setTimeScale(float &_timeScale);

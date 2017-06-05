@@ -162,7 +162,7 @@ void AudioHandler::createBuffer(eRPM rpm)
 		error("Error loading ALBuffer");
 }
 
-void AudioHandler::setListener(Vector3f pos, Vector3f vel, Quaternionf rot)
+void AudioHandler::setListener(const Vector3f& pos, const Vector3f& vel, const Quaternionf& rot)
 {
 	Matrix3f rotMat = rot.toRotationMatrix();
 	Vector3f dir = rotMat * Vector3f(0.0f, 1.0f, 0.0f);
