@@ -85,11 +85,10 @@ void Clone::update(Vector3f lookAt)
 
 		CAM::SET_CAM_FOV(cam1, calculateFOV((lookAt - position).norm()));
 
-		Vector3 rot = CAM::GET_CAM_ROT(cam1, 0);
-		Quaternionf rotation = ENTITY_X::GET_ENTITY_QUATERNION(ped);
+		Quaternionf rot = CAM_X::GET_CAM_QUATERNION(cam1);
 
 		//See updateCamera
-		AudioHandler::setListener(position, Vector3f(0.0f, 0.0f, 0.0f), rotation); //INDEV camera turns
+		AudioHandler::setListener(position, Vector3f(0.0f, 0.0f, 0.0f), rot); //INDEV camera turns
 	}
 }
 
