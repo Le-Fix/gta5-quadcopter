@@ -41,6 +41,7 @@ namespace CAM_X
 {
 	void POINT_CAM_AT_COORD(Camera c, Vector3f pos);
 	void SET_CAM_QUATERNION(Camera c, Quaternionf q);
+	Quaternionf GET_CAM_QUATERNION(Camera c);
 	void SET_CAM_COORD(Camera c, Vector3f pos);
 	Vector3f GET_CAM_COORD_X(Camera c);
 	void ATTACH_CAM_TO_ENTITY(Camera c, Entity e, Vector3f pos, bool isRel);
