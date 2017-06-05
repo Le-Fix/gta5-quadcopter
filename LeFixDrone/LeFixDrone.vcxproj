@@ -132,9 +132,11 @@
     <ClInclude Include="Drone\DroneControllerAcro.h" />
     <ClInclude Include="Drone\DroneControllerLevel.h" />
     <ClInclude Include="Drone\DroneState.h" />
+    <ClInclude Include="Cams\FollowPointCam.h" />
     <ClInclude Include="Graphics\CurvePlot.h" />
     <ClInclude Include="Graphics\ColorRGBA.h" />
     <ClInclude Include="Drone\Drone.h" />
+    <ClInclude Include="Cams\IndieCam.h" />
     <ClInclude Include="Input\Gamepad.h" />
     <ClInclude Include="LeFixDrone.h" />
     <ClInclude Include="Menu\menu.h" />
@@ -162,9 +164,11 @@
     <ClCompile Include="Drone\DroneControllerAcro.cpp" />
     <ClCompile Include="Drone\DroneControllerLevel.cpp" />
     <ClCompile Include="Drone\DroneState.cpp" />
+    <ClCompile Include="Cams\FollowPointCam.cpp" />
     <ClCompile Include="Graphics\CurvePlot.cpp" />
     <ClCompile Include="Graphics\ColorRGBA.cpp" />
     <ClCompile Include="Drone\Drone.cpp" />
+    <ClCompile Include="Cams\IndieCam.cpp" />
     <ClCompile Include="Input\Gamepad.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Menu\menu.cpp" />

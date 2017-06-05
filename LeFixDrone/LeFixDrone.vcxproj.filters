@@ -105,6 +105,12 @@
     <ClInclude Include="Drone\PID_Vect.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Cams\IndieCam.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Cams\FollowPointCam.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -189,6 +195,12 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Drone\PID_Vect.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Cams\IndieCam.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Cams\FollowPointCam.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

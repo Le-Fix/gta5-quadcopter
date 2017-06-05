@@ -4,6 +4,7 @@
 #include "..\Input\Gamepad.h"
 #include "..\AudioHandler.h"
 
+#include "../Cams/FollowPointCam.h"
 #include "DroneState.h"
 #include "DroneControllerAcro.h"
 #include "DroneControllerLevel.h"
@@ -45,8 +46,11 @@ private:
 	float prop[NUM_PROP];				//Prop Speed
 	Vector3f propPosGlobal[NUM_PROP];	//Prop Positions
 
+	//Cams
+	Camera cam1, cam3;
+	FollowPointCam camF;
+
 	Blip blip;
-	Camera cam1, cam3, camF;
 	AudioHandler audio;
 	Object collider, modelCase;
 	Object modelProp[NUM_PROP];

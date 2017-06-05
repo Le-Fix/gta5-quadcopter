@@ -170,8 +170,10 @@ Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
 	//Cameras
 	cam1 = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
 	cam3 = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
+	camF = FollowPointCam(10.0f);
 	CAM::SET_CAM_NEAR_CLIP(cam1, 0.05f);
 	CAM::SET_CAM_NEAR_CLIP(cam3, 0.05f);
+	CAM::SET_CAM_NEAR_CLIP(camF.cam, 0.05f);
 	CAM_X::ATTACH_CAM_TO_ENTITY(cam1, collider, camDefaultOffsetLocal, true);
 	CAM_X::ATTACH_CAM_TO_ENTITY(cam3, collider, camDefaultOffsetLocal, true); //Should be changed in refreshDynamicSettings
 
@@ -449,6 +451,8 @@ void Drone::updateCameras()
 	//Apply
 	CAM_X::SET_CAM_QUATERNION(cam1, cam1RotGlobal);
 	CAM_X::SET_CAM_QUATERNION(cam3, cam3RotGlobal);
+
+	camF.update(currentState.pos);
 }
 
 void Drone::updateMinimap()
@@ -505,5 +509,9 @@ void Drone::updateAudioListener()
 
 		//See updateCamera
 		AudioHandler::setListener(position, currentState.vel, cam3RotGlobal);
+	}
+	else if (CAM::IS_CAM_RENDERING(camF.cam))
+	{
+		CAM::GET_TOT
 	}
 }
