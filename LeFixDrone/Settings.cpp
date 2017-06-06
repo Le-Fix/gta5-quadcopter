@@ -22,9 +22,10 @@ menuValueB Settings::gamepadInvPitch = menuValueB(false, "GAMEPAD", "invCamY", "
 menuValueS Settings::camSub			= menuValueS("Camera");
 menuValueS Settings::camD1Sub		= menuValueS("Drone 1st Person");
 menuValueS Settings::camD3Sub		= menuValueS("Drone 3rd Person");
+menuValueS Settings::camDFSub		= menuValueS("Drone Follow");
 menuValueS Settings::camC1Sub		= menuValueS("Player 1st Person");
 
-menuValueI Settings::camMode		= menuValueI(0, 0, 2, 1, "CAM", "mode", "Mode", "");
+menuValueI Settings::camMode		= menuValueI(0, 0, 3, 1, "CAM", "mode", "Mode", "");
 menuValueI Settings::camDrone1FOV	= menuValueI( 60, 90, 120, 1, "CAMD1", "fov", "Field of View", " deg");
 menuValueI Settings::camDrone3FOV	= menuValueI( 60, 90, 120, 1, "CAMD3", "fov", "Field of View", " deg");
 menuValueI Settings::camDrone1Tilt	= menuValueI(-90, 30,  90, 1, "CAMD1", "tilt", "Tilt", " deg");
@@ -71,7 +72,7 @@ menuValueS Settings::exitStart		= menuValueS("Go to Start Point");
 
 //DEBUG
 menuValueS Settings::debugSub = menuValueS("Debug");
-menuValueI Settings::debugX = menuValueI(1, 1, 4, 1, "DEBUG", "x", "X", " ");
+menuValueI Settings::debugX = menuValueI(1, 1, 2, 1, "DEBUG", "x", "X", " ");
 
 void Settings::load()
 {

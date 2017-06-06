@@ -146,11 +146,13 @@ void CAM_X::SET_CAM_QUATERNION(Camera c, Quaternionf q)
 Quaternionf CAM_X::GET_CAM_QUATERNION(Camera c)
 {
 	Vector3f rotVec = DegToRad(1.0f)*Convert(CAM::GET_CAM_ROT(c, 0));
+
 	Matrix3f xRot = AngleAxisf(rotVec.x(), Vector3f(1.0f, 0.0f, 0.0f)).matrix();
 	Matrix3f yRot = AngleAxisf(rotVec.y(), Vector3f(0.0f, 1.0f, 0.0f)).matrix();
 	Matrix3f zRot = AngleAxisf(rotVec.z(), Vector3f(0.0f, 0.0f, 1.0f)).matrix();
 
-	Matrix3f rot = xRot*yRot*zRot;
+	Matrix3f rot = zRot*yRot*xRot;
+
 	return Quaternionf(rot);
 }
 
@@ -159,7 +161,7 @@ void CAM_X::SET_CAM_COORD(Camera c, Vector3f pos)
 	CAM::SET_CAM_COORD(c, pos.x(), pos.y(), pos.z());
 }
 
-Vector3f CAM_X::GET_CAM_COORD_X(Camera c)
+Vector3f CAM_X::GET_CAM_COORD(Camera c)
 {
 	return Vector3f(Convert(CAM::GET_CAM_COORD(c)));
 }

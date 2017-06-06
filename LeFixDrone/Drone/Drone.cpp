@@ -8,9 +8,9 @@ using namespace LeFixDrone;
 
 //-------------------STATIC VARIABLES-----------------------
 
-const float Drone::gravity = 20.0f; //Force has factor 0.5f
+const float Drone::gravity(20.0f); //Force has factor 0.5f
 
-const Vector3f Drone::camDefaultOffsetLocal = Vector3f(0.0f, 0.05f, 0.00f); //Default Camera Position
+const Vector3f Drone::camDefaultOffsetLocal(0.0f, 0.05f, 0.00f); //Default Camera Position
 const Quaternionf Drone::colliderRotLocal = Quaternionf(AngleAxisf(DegToRad(90.0f), Vector3f(0.0f, 1.0f, 0.0f))); //Rotation of collider //Indev angle 90!!
 
 float Drone::maxThrust, Drone::dragCoef; //calculated
@@ -100,11 +100,13 @@ void Drone::refreshCamMode()
 	{
 	case camModeD1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
 	case camModeD3: CAM::SET_CAM_ACTIVE(cam3, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
+	case camModeDF: camF.setActive(); break;
 	default: break;
 	}
 }
 
 Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
+	: camF(10.0f)
 {
 	//p_rc_handset 2553089994 //prop_cs_power_cell 1456723945 //prop_c4_final 3028688567 //prop_microphone_02 933500565 //p_ld_frisbee_01 3024733075
 	Hash colliderHash = -589090886; //Big box 2781083456
@@ -170,7 +172,6 @@ Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
 	//Cameras
 	cam1 = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
 	cam3 = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true);
-	camF = FollowPointCam(10.0f);
 	CAM::SET_CAM_NEAR_CLIP(cam1, 0.05f);
 	CAM::SET_CAM_NEAR_CLIP(cam3, 0.05f);
 	CAM::SET_CAM_NEAR_CLIP(camF.cam, 0.05f);
@@ -512,6 +513,6 @@ void Drone::updateAudioListener()
 	}
 	else if (CAM::IS_CAM_RENDERING(camF.cam))
 	{
-		AudioHandler::setListener(camF.getPos(), camF.getVel(), cam3RotGlobal);
+		AudioHandler::setListener(camF.getPos(), camF.getVel(), CAM_X::GET_CAM_QUATERNION(camF.cam));
 	}
 }

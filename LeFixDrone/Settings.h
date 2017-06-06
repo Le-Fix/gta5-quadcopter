@@ -23,7 +23,7 @@ public:
 	static menuValueB gamepadVib, gamepadInvPitch;
 
 	//CAMERA
-	static menuValueS camSub, camD1Sub, camD3Sub, camC1Sub;
+	static menuValueS camSub, camD1Sub, camD3Sub, camDFSub, camC1Sub;
 	static menuValueI camMode;
 	static menuValueI camDrone1FOV, camDrone1Tilt, camDrone3FOV, camDrone3Tilt, camClone1CloseFOV, camClone1InfFOV;
 	static menuValueF camDrone3YPos, camDrone3ZPos;

@@ -5,6 +5,7 @@
 # Files
 *.tlog
 *.db
+*.opendb
 *.o
 *.obj
 *.pdb

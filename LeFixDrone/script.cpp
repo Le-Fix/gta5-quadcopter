@@ -302,7 +302,7 @@ int menu_process_main()
 	data.push_back(&Settings::physxSub);
 	data.push_back(&Settings::visualSub);
 	data.push_back(&Settings::exitSub);
-	data.push_back(&Settings::debugSub); //INDEV
+	//data.push_back(&Settings::debugSub); //INDEV
 
 	data.shrink_to_fit();
 
@@ -356,7 +356,7 @@ int menu_process_main()
 				int exitCode = menu_process_exit();
 				if (exitCode != exitNo) return exitCode;
 			}
-			//if (data.at(index) == &Settings::debugSub)		menu_process_debug(); //INDEV
+			if (data.at(index) == &Settings::debugSub)		menu_process_debug(); //INDEV
 			waitTime += 200;
 		}
 	}
@@ -436,6 +436,7 @@ void menu_process_camera_main()
 	//Has to be same order as eCamMode enum
 	data.push_back(&Settings::camD1Sub);
 	data.push_back(&Settings::camD3Sub);
+	data.push_back(&Settings::camDFSub);
 	data.push_back(&Settings::camC1Sub);
 	data.shrink_to_fit();
 

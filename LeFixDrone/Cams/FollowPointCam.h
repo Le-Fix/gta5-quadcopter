@@ -6,7 +6,6 @@ class FollowPointCam :
 	public IndieCam
 {
 public:
-	FollowPointCam();
 	FollowPointCam(float d);
 	~FollowPointCam();
 
