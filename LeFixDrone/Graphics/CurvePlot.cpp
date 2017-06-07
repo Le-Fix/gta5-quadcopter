@@ -58,7 +58,7 @@ void CurvePlot::draw()
 	static int font = 0; //Standard Font (like Arial)
 	static float text_scale = 0.8f * sizeRct; //Size
 
-	float ratio = GRAPHICS::_GET_SCREEN_ASPECT_RATIO(FALSE);
+	float ratio = GRAPHICS::_GET_ASPECT_RATIO(FALSE);
 
 	//Draw background
 	GRAPHICS_X::DRAW_RECT(posX, posY - 0.5f*(sizeRct + sizeBrd), (sizeRct + 2 * sizeBrd) / ratio, sizeBrd, colBrd); //Top

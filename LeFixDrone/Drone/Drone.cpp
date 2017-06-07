@@ -323,7 +323,7 @@ void Drone::setTrails(bool doEnable)
 		if (STREAMING::HAS_NAMED_PTFX_ASSET_LOADED(asset)) {
 			for (int n = 0; n < NUM_PROP; n++)
 			{
-				GRAPHICS::_SET_PTFX_ASSET_NEXT_CALL(asset);
+				GRAPHICS::_USE_PARTICLE_FX_ASSET_NEXT_CALL(asset);
 				ptfx[n][0] = GRAPHICS::START_PARTICLE_FX_LOOPED_ON_ENTITY(effect, modelFris[n], 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.6f, FALSE, FALSE, FALSE);
 				GRAPHICS::SET_PARTICLE_FX_LOOPED_COLOUR(ptfx[n][0], 1.0f, 0.5f, 0.0f, FALSE);
 			}
@@ -344,7 +344,7 @@ void Drone::setTrails(bool doEnable)
 			if (STREAMING::HAS_NAMED_PTFX_ASSET_LOADED(asset)) {
 				for (int n = 0; n < NUM_PROP; n++)
 				{
-					GRAPHICS::_SET_PTFX_ASSET_NEXT_CALL(asset);
+					GRAPHICS::_USE_PARTICLE_FX_ASSET_NEXT_CALL(asset);
 					ptfx[n][1] = GRAPHICS::START_PARTICLE_FX_LOOPED_ON_ENTITY(effect, modelFris[n], 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.6f, FALSE, FALSE, FALSE);
 					GRAPHICS::SET_PARTICLE_FX_LOOPED_COLOUR(ptfx[n][1], 1.0f, 0.5f, 0.0f, FALSE);
 				}

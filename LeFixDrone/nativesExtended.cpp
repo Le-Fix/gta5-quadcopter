@@ -183,7 +183,7 @@ void GRAPHICS_X::DRAW_RECT(float posX, float posY, float width, float height, Co
 
 void GRAPHICS_X::DRAW_DOT(float posX, float posY, float size, ColorRGBA col)
 {
-	float ratio = GRAPHICS::_GET_SCREEN_ASPECT_RATIO(FALSE);
+	float ratio = GRAPHICS::_GET_ASPECT_RATIO(FALSE);
 	DRAW_RECT(posX, posY, size / ratio, size, col);
 }
 
@@ -195,9 +195,9 @@ void UI_X::DRAW_TEXT(float posX, float posY, float scale, int font, ColorRGBA co
 	UI::SET_TEXT_CENTRE(FALSE);
 	UI_X::SET_TEXT_DROPSHADOW(0, ColorRGBA::transparent());
 	UI_X::SET_TEXT_EDGE(0, ColorRGBA::transparent());
-	UI::_SET_TEXT_ENTRY("STRING");
-	UI::_ADD_TEXT_COMPONENT_STRING((LPSTR)text.c_str());
-	UI::_DRAW_TEXT(posX, posY);
+	UI::BEGIN_TEXT_COMMAND_DISPLAY_TEXT("STRING");
+	UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME((LPSTR)text.c_str());
+	UI::END_TEXT_COMMAND_DISPLAY_TEXT(posX, posY);
 }
 
 void UI_X::SET_TEXT_COLOUR(ColorRGBA col)

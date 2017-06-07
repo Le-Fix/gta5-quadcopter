@@ -18,7 +18,7 @@ void draw_menu_line(std::string name, std::string value, int index, float lineWi
 {
 	//Screen values
 	int screenWidth, screenHeight;
-	GRAPHICS::_GET_SCREEN_ACTIVE_RESOLUTION(&screenWidth, &screenHeight);
+	GRAPHICS::_GET_ACTIVE_SCREEN_RESOLUTION(&screenWidth, &screenHeight);
 
 	// default values
 	ColorRGBA text_col = ColorRGBA(245, 245, 246, 255);

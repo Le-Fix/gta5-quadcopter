@@ -9,7 +9,7 @@ void showNotification(std::string message) {
 
 void showNotification(int &handle, std::string message) {
 	UI::_SET_NOTIFICATION_TEXT_ENTRY("STRING");
-	UI::_ADD_TEXT_COMPONENT_STRING(&message[0u]);
+	UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(&message[0u]);
 	handle = UI::_DRAW_NOTIFICATION(false, false);
 }
 
@@ -27,21 +27,21 @@ void replaceNotification(int &handle, std::string message)
 //Subtitle
 void showSubtitle(std::string text, int msec)
 {
-	UI::_SET_TEXT_ENTRY_2("STRING");
-	UI::_ADD_TEXT_COMPONENT_STRING(&text[0u]);
-	UI::_DRAW_SUBTITLE_TIMED(msec, 1);
+	UI::BEGIN_TEXT_COMMAND_PRINT("STRING");
+	UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(&text[0u]);
+	UI::END_TEXT_COMMAND_PRINT(msec, 1);
 }
 
 //Textbox
 void showTextboxTop(std::string text, bool beep) {
-	UI::_SET_TEXT_COMPONENT_FORMAT("STRING");
-	UI::_ADD_TEXT_COMPONENT_STRING(&text[0u]);
-	UI::_DISPLAY_HELP_TEXT_FROM_STRING_LABEL(0, false, beep, -1);
+	UI::BEGIN_TEXT_COMMAND_DISPLAY_HELP("STRING");
+	UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(&text[0u]);
+	UI::END_TEXT_COMMAND_DISPLAY_HELP(0, false, beep, -1);
 }
 
 //Textbox
 void showTextboxBottom(std::string text, bool beep) {
-	UI::_SET_TEXT_COMPONENT_FORMAT("STRING");
-	UI::_ADD_TEXT_COMPONENT_STRING(&text[0u]);
-	UI::_DISPLAY_HELP_TEXT_FROM_STRING_LABEL(0, false, beep, -1);
+	UI::BEGIN_TEXT_COMMAND_DISPLAY_HELP("STRING");
+	UI::ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(&text[0u]);
+	UI::END_TEXT_COMMAND_DISPLAY_HELP(0, false, beep, -1);
 }

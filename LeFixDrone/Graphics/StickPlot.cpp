@@ -38,7 +38,7 @@ void StickPlot::draw()
 	static float posX = 0.5f;
 	static float posY = 0.94f;
 
-	float ratio = GRAPHICS::_GET_SCREEN_ASPECT_RATIO(FALSE);
+	float ratio = GRAPHICS::_GET_ASPECT_RATIO(FALSE);
 
 	//Draw Border
 	GRAPHICS_X::DRAW_RECT(posX, posY - 0.5f*(sizeRct + sizeGap), (2 * sizeRct + 3 * sizeGap) / ratio, sizeGap, colBrd); //Top
