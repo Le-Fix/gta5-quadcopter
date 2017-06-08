@@ -20,7 +20,7 @@ void Gamepad::refresh()
 	stick_right_x	=  CONTROLS::GET_CONTROL_NORMAL(2, eControl::ControlLookLeftRight);
 	stick_right_y	= -CONTROLS::GET_CONTROL_NORMAL(2, eControl::ControlLookUpDown);
 
-	if (Settings::gamepadInvPitch.get()) stick_right_y *= -1.0f;
+	if (Settings::gamepadInvPitch) stick_right_y *= -1.0f;
 }
 
 

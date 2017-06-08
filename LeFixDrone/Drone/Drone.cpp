@@ -29,13 +29,13 @@ void Drone::refreshSettingsStatic()
 	propPosLocal[BL] = Vector3f(-dist, dist, 0.0f);
 
 	//CAMERA
-	cam1RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone1Tilt.get()), Vector3f(1.0f, 0.0f, 0.0f)));
-	cam3RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone3Tilt.get()), Vector3f(1.0f, 0.0f, 0.0f)));
+	cam1RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone1Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
+	cam3RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone3Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
 
 	//Dependent stats
-	float g = gravity*Settings::physxGScale.get();
-	maxThrust = g * (1.0f + Settings::droneMaxRelLoad.get());
-	dragCoef = sqrtf( (maxThrust*maxThrust - g*g) ) / (Settings::droneMaxVel.get()*Settings::droneMaxVel.get()); // sqrt(t*t-g*g)/(vel*vel)
+	float g = gravity*Settings::physxGScale;
+	maxThrust = g * (1.0f + Settings::droneMaxRelLoad);
+	dragCoef = sqrtf( (maxThrust*maxThrust - g*g) ) / (Settings::droneMaxVel*Settings::droneMaxVel); // sqrt(t*t-g*g)/(vel*vel)
 }
 
 //--------------------MEMBER PUBLIC---------------------------
@@ -43,32 +43,32 @@ void Drone::refreshSettingsStatic()
 void Drone::refreshSettingsDynamic()
 {
 	//Cams set FOV
-	CAM::SET_CAM_FOV(cam1, (float)Settings::camDrone1FOV.get());
-	CAM::SET_CAM_FOV(cam3, (float)Settings::camDrone3FOV.get());
+	CAM::SET_CAM_FOV(cam1, (float)Settings::camDrone1FOV);
+	CAM::SET_CAM_FOV(cam3, (float)Settings::camDrone3FOV);
 
 	//Cam3 atatch at new coord
-	Vector3f cam3PosDrone = Vector3f(0.0f, Settings::camDrone3YPos.get(), Settings::camDrone3ZPos.get()) + camDefaultOffsetLocal;
+	Vector3f cam3PosDrone = Vector3f(0.0f, Settings::camDrone3YPos, Settings::camDrone3ZPos) + camDefaultOffsetLocal;
 	Vector3f cam3PosColld = colliderRotLocal.conjugate().toRotationMatrix() * cam3PosDrone;
 	CAM_X::ATTACH_CAM_TO_ENTITY(cam3, collider, cam3PosColld, TRUE);
 
 	//PTFX
-	setTrails(Settings::showTrails.get());
+	setTrails(Settings::showTrails);
 
 	//Set collider invisble before model visibility is set because model is attached to it
-	ENTITY::SET_ENTITY_VISIBLE(collider, Settings::showCollider.get(), FALSE);
+	ENTITY::SET_ENTITY_VISIBLE(collider, Settings::showCollider, FALSE);
 
 	//Attached stuff (frisbees and mics) is automatically set
-	ENTITY::SET_ENTITY_VISIBLE(modelCase, Settings::showModel.get(), FALSE);
+	ENTITY::SET_ENTITY_VISIBLE(modelCase, Settings::showModel, FALSE);
 
 	//New phyiscs params: mass and gscale
-	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, Settings::droneMass.get(), Settings::physxGScale.get(), -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f);
+	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, Settings::droneMass, Settings::physxGScale, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f);
 
 	//Collision
-	ENTITY::SET_ENTITY_COLLISION(collider, Settings::physxColl.get(), TRUE);
+	ENTITY::SET_ENTITY_COLLISION(collider, Settings::physxColl, TRUE);
 
 	//Controller
 	delete controller;
-	if (Settings::droneAcroMode.get())
+	if (Settings::droneAcroMode)
 	{
 		controller = new DroneControllerAcro();
 	} else {
@@ -77,16 +77,16 @@ void Drone::refreshSettingsDynamic()
 	resetHistory();
 
 	//PID
-	if (Settings::pidEnable.get())
+	if (Settings::pidEnable)
 	{
 		OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  2.0f,  1.0f,  0.0f, -1.0f, -1.0f, -1.0f); //Low Dampening
 	} else {
 		OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  10.0f,  10.0f,  10.0f, -1.0f, -1.0f, -1.0f); //Big Dampening
 	}
 	pidRot.reset();
-	pidRot.kP = Settings::pidP.get();
-	pidRot.kI = Settings::pidI.get();
-	pidRot.kD = Settings::pidD.get();
+	pidRot.kP = Settings::pidP;
+	pidRot.kI = Settings::pidI;
+	pidRot.kD = Settings::pidD;
 
 	//LOAD NEW PHYSICS? (SET STATIC THEN DYNAMIC AGAIN)
 	ENTITY::SET_ENTITY_DYNAMIC(collider, FALSE);
@@ -96,7 +96,7 @@ void Drone::refreshSettingsDynamic()
 
 void Drone::refreshCamMode()
 {
-	switch (Settings::camMode.get())
+	switch (Settings::camMode)
 	{
 	case camModeD1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
 	case camModeD3: CAM::SET_CAM_ACTIVE(cam3, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
@@ -230,11 +230,11 @@ void Drone::update(Gamepad &gamepad)
 	if (ENTITY::HAS_ENTITY_COLLIDED_WITH_ANYTHING(collider) || ENTITY::IS_ENTITY_IN_WATER(collider))
 	{
 
-		if ((currentState.vel - oldState.vel).squaredNorm() > (Settings::droneMaxVel.get()*Settings::droneMaxVel.get()/36.0f) )
+		if ((currentState.vel - oldState.vel).squaredNorm() > (Settings::droneMaxVel*Settings::droneMaxVel/36.0f) )
 		{
-			if(Settings::gamepadVib.get()) CONTROLS::SET_PAD_SHAKE(0, 100, 200);
+			if(Settings::gamepadVib) CONTROLS::SET_PAD_SHAKE(0, 100, 200);
 			//Screen effect when collision delta v is above maxVel/6
-			if(Settings::camMode.get() == camModeD1) TimeCycleManager::setTimecycleFadeOut("NG_filmic21", 0.5f);
+			if(Settings::camMode == camModeD1) TimeCycleManager::setTimecycleFadeOut("NG_filmic21", 0.5f);
 		}
 		if (gamepad.button_flip) flip();
 		if (gamepad.button_unstuck) unstuck();
@@ -370,7 +370,7 @@ void Drone::setTrails(bool doEnable)
 
 void Drone::updateMomentum(const Quaternionf &desiredRot)
 {
-	if (Settings::pidEnable.get())
+	if (Settings::pidEnable)
 	{
 		slerpRot = slerpRot.slerp(GAMEPLAY::GET_FRAME_TIME() * 25.0f, desiredRot); //25 Frames Slerp desiredRot, should kill overrotation of pid
 
@@ -384,7 +384,7 @@ void Drone::updateMomentum(const Quaternionf &desiredRot)
 		ENTITY_X::APPLY_MOMENTUM_TO_ENTITY(collider, momentum, 0, false, true); //Apply
 
 		//For Prop Sound
-		Vector3f temp = 0.2f * momentum / (Settings::pidP.get() + Settings::pidD.get());
+		Vector3f temp = 0.2f * momentum / (Settings::pidP + Settings::pidD);
 		appliedRelMom = 0.8f*appliedRelMom + 0.2f*temp;
 	}
 	else

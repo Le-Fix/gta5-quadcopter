@@ -33,24 +33,6 @@
     <ClInclude Include="Steuerung.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Menu\menu.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Menu\menuValue.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Menu\menuValueB.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Menu\menuValueF.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Menu\menuValueI.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Menu\menuValueS.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Utils\INIutils.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -111,6 +93,18 @@
     <ClInclude Include="Cams\FollowPointCam.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="GTAVMenuBase\menucontrols.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="GTAVMenuBase\menukeyboard.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="GTAVMenuBase\menu.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\keyboard.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -129,24 +123,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Steuerung.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menu.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menuValue.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menuValueB.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menuValueF.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menuValueI.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Menu\menuValueS.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Utils\INIutils.cpp">
@@ -201,6 +177,18 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Cams\FollowPointCam.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="GTAVMenuBase\menukeyboard.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="GTAVMenuBase\menu.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="GTAVMenuBase\menucontrols.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\keyboard.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

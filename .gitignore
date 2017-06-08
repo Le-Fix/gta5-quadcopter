@@ -1,5 +1,6 @@
 # Folders
 .vs/
+LeFixDrone/GTAVMenuBase/
 **/x64/
 
 # Files
@@ -9,4 +10,3 @@
 *.o
 *.obj
 *.pdb
-LeFixDrone/GTAVMenuBase/

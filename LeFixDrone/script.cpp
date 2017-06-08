@@ -7,29 +7,58 @@
 
 #include "script.h"
 
+#include "LeFixDrone.h"
+#include "SHV\main.h"
+
+#include "AudioHandler.h"
+#include "Clone.h"
+#include "TimeCycleManager.h"
+#include "Drone\Drone.h"
+#include "Input\Gamepad.h"
+#include "Input\keyboard.h"
+
+#include "Utils\INIutils.hpp"
+#include "Utils\UIutils.hpp"
+
 #include "Graphics\CurvePlot.h"
 #include "Graphics\StickPlot.h"
 #include "nativesExtended.h"
 
-std::string modVersion = "v1.1";
+std::string modVersion = "v1.2 pre";
+
+NativeMenu::Menu menu;
+NativeMenu::MenuControls menuControl;
 
 Drone *drone = nullptr;
 Clone *clone = nullptr;
 
 Gamepad gamepad;
+
 StickPlot stickPlot(&gamepad);
 CurvePlot curvePlot(&gamepad);
 
 void initialize()
 {
-	std::string path = GetCurrentModulePath() + "LeFixDrone\\settings.ini";
+	std::string path_settings_mod = GetCurrentModulePath() + "LeFixDrone\\settings_mod.ini";
+	std::string path_settings_menu = GetCurrentModulePath() + "LeFixDrone\\settings_menu.ini";
 	std::string audioPath50 = GetCurrentModulePath() + "LeFixDrone\\AudioLow.wav";
 	std::string audioPath80 = GetCurrentModulePath() + "LeFixDrone\\AudioHigh.wav";
 
+	//Menu
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuKey]		= str2key("SPACE");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuUp]		= str2key("UP");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuDown]	= str2key("DOWN");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuLeft]	= str2key("LEFT");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuRight]	= str2key("RIGHT");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuSelect]	= str2key("RETURN");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuCancel]	= str2key("BACKSPACE");
+
+	menu.LoadMenuTheme(std::wstring(path_settings_menu.begin(), path_settings_menu.end()).c_str());
+
 	//Settings
-	Settings::filePath = path;
-	Settings::load();
-	Settings::save();
+	Settings::filePath = path_settings_mod;
+	//Settings::load();
+	//Settings::save();
 
 	//Audio
 	AudioHandler::initialize();
@@ -46,101 +75,87 @@ void initialize()
 
 void ScriptMain()
 {
+	static bool boxFromModItself = false; //Don't overwrite existing helpbox
+
 	initialize();
 	while (true) {
 
 		update();
-		//No drone present?
-		if (drone == nullptr) {
-
-			static bool boxFromModItself = false; //Don't overwrite existing helpbox
-
-			//Start Flight?
-			if (ENTITY::GET_ENTITY_SPEED(PLAYER::PLAYER_PED_ID()) < 0.2f &&					//Not moving
-				!ENTITY::IS_ENTITY_IN_WATER(PLAYER::PLAYER_PED_ID()) &&						//Not swimming
-				UI::IS_HUD_COMPONENT_ACTIVE(eHudComponent::HudComponentWeaponWheel) &&		//Weapon wheel active
-				PED::IS_PED_ON_FOOT(PLAYER::PLAYER_PED_ID()) &&								//On Foot
-				!PED::IS_PED_RUNNING_MOBILE_PHONE_TASK(PLAYER::PLAYER_PED_ID()) &&			//No Phone Call
-				!GAMEPLAY::GET_MISSION_FLAG())												//No active mission
+											  
+		if (isAbleToStartFlight())	//Start Flight?
+		{
+			//Textbox checken
+			if (!(UI::IS_HUD_COMPONENT_ACTIVE(eHudComponent::HudComponentHelpText) && !boxFromModItself)) //No other helptextbox visible
 			{
-
-				//Textbox checken
-				if (!(UI::IS_HUD_COMPONENT_ACTIVE(eHudComponent::HudComponentHelpText) && !boxFromModItself)) //No other helptextbox visible
-				{
-					//showTextboxTop("Back to start location ~INPUT_FRONTEND_ACCEPT~~n~Teleport player to drone ~INPUT_FRONTEND_CANCEL~", true); //Match with gamepad class?
-					showTextboxTop("Start Quadcopter Flight ~INPUT_FRONTEND_ACCEPT~", false);
-					boxFromModItself = true;
-					if(gamepad.button_accept) startFlight();
-				}
-				else {
-					boxFromModItself = false; //Mod doesn't print box!
-				}
+				//showTextboxTop("Back to start location ~INPUT_FRONTEND_ACCEPT~~n~Teleport player to drone ~INPUT_FRONTEND_CANCEL~", true); //Match with gamepad class?
+				showTextboxTop("Start Quadcopter Flight ~INPUT_FRONTEND_ACCEPT~", false);
+				boxFromModItself = true;
+				if (gamepad.button_accept) startFlight();
 			}
 			else {
 				boxFromModItself = false; //Mod doesn't print box!
 			}
 		}
-		//Drone present?
-		else
-		{
-			//Toggle Menu?
-			if (gamepad.button_accept) {
-				int exit = menu_process_main();
-				Settings::save();
-				switch (exit)
-				{
-				case exitNo: WAIT_LONG(200);  break;
-				case exitStart: endFlight(true); break;
-				case exitHere: endFlight(false); break;
-				}
-			}
-
-			//Toggle Cameramode
-			if (gamepad.button_cam)
-			{
-				Settings::camMode.increase();
-				drone->refreshCamMode();
-				clone->refreshCamMode();
-			}
-			//CAM::SET_CAM_AFFECTS_AIMING() //TOMTOM
-
-			//Fast Exit?
-			if (PLAYER::IS_PLAYER_DEAD(PLAYER::PLAYER_ID())) endFlightQuick();
-			if (PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE)) endFlightQuick();
-			if (GAMEPLAY::GET_MISSION_FLAG()) endFlightQuick();
+		else {
+			boxFromModItself = false; //Mod doesn't print box!
 		}
-		WAIT(0);
 	}
 }
 
 void update()
 {
-	//Input source
+	//Input
 	gamepad.refresh();
 
+	//TimeCycle (ScreenEffects)
 	static int count = 0;
-	if (count == 20)
-	{
-		//TimeCycle (ScreenEffects)
+	if (count == 20) {
 		TimeCycleManager::update();
 		count = 0;
 	}
 	count++;
 
-	//Flight
-	if (drone != nullptr) {
+	//No drone present?
+	if (drone == nullptr) {
+
+	}
+	//Drone present?
+	else
+	{
+		//Flight
 		updateFlight();
-		if (Settings::showStickCam.get()) {
+
+		//Stickplot
+		if (Settings::showStickCam) {
 			stickPlot.refreshData();
 			stickPlot.draw();
 		}
+
+		//Toggle Cameramode
+		if (gamepad.button_cam)
+		{
+			Settings::camMode++;
+			if (Settings::camMode > LeFixDrone::camModeC3) Settings::camMode = 0;
+			drone->refreshCamMode();
+			clone->refreshCamMode();
+		}
+		//CAM::SET_CAM_AFFECTS_AIMING() //TOMTOM
+
+		//Fast Exit?
+		if (PLAYER::IS_PLAYER_DEAD(PLAYER::PLAYER_ID())) endFlightQuick();
+		if (PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE)) endFlightQuick();
+		if (GAMEPLAY::GET_MISSION_FLAG()) endFlightQuick();
+
+		//Menu
+		updateMenu();
 	}
+	WAIT(0);
 }
 
 void updateFlight()
 {
 	//Disable Buttons and activites while flying drone
-	disableDroneButtons();
+	disableFlightButtons();
 
 	//Update Drone
 	drone->update(gamepad);
@@ -156,6 +171,161 @@ void updateFlight()
 		MOBILE::DESTROY_MOBILE_PHONE();
 	}
 	WEAPON::SET_CURRENT_PED_WEAPON(PLAYER::PLAYER_PED_ID(), 0xA2719263, TRUE); //unarmed
+}
+
+void menuInit() {}
+void menuClose() {}
+void updateMenu()
+{
+	menu.CheckKeys(&menuControl, std::bind(menuInit), std::bind(menuClose));
+
+	if (menu.CurrentMenu("mainmenu")) {
+		menu.Title("LeFix Drone");
+
+		menu.MenuOption("Audio", "audiomenu", { "All audio settings here." });
+		menu.MenuOption("Camera", "cameramenu", { "Settings for all camera modes." });
+		menu.MenuOption("Control", "controlmenu", { "Settings for conversion of gamepad", "output to drone input." });
+		menu.MenuOption("Drone", "dronemenu", { "Drone specific settings." });
+		menu.MenuOption("Gamepad", "gamepadmenu", { "Gamepad/input device specific settings." });
+		menu.MenuOption("Physics", "physxmenu", { "General physics settings." });
+		menu.MenuOption("Visual", "visualmenu", { "General physics settings." });
+		menu.MenuOption("Exit", "exitmenu", { "Exit drone mode here." });
+	}
+
+	if (menu.CurrentMenu("cameramenu")) {
+		menu.Title("Camera");
+	}
+
+	if (menu.CurrentMenu("controlmenu")) {
+		menu.Title("Control");
+		menu.FloatOption("RC Rate PR",	&Settings::contRcRatePR,	0.1f, 3.0f, 0.1f, { "Linear factor for Pitch and Roll." });
+		menu.FloatOption("RC Rate Y",	&Settings::contRcRateY,		0.1f, 3.0f, 0.1f, { "Linear factor for Yaw." });
+		menu.FloatOption("Expo PR",		&Settings::contExpoPR,		0.0f, 1.0f, 0.02f, { "Linear and Cubic parts.", "Effects small inputs.", "Doesn't change max rotation velocity." });
+		menu.FloatOption("Expo Y",		&Settings::contExpoY,		0.0f, 1.0f, 0.02f, { "Linear factor for Yaw." });
+	}
+	
+	if (menu.CurrentMenu("dronemenu")) {
+		menu.Title("Drone");
+		menu.FloatOption("Mass", &Settings::droneMass, 0.1f, 10.0f, 0.1f, { "Drone mass" });
+		menu.FloatOption("Max rel. Load", &Settings::droneMaxRelLoad, 0.0f, 5.0f, 0.1f, { "Maximum extra load the drone","is capable to carry." });
+		menu.FloatOption("Max Velocity", &Settings::droneMaxVel, 10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity", "the drone can achieve.", "Implicitly sets drag coefficient" });
+		menu.BoolOption("3D Flying", &Settings::drone3DFly, { "Enables downward/reverse thrust." });
+		menu.BoolOption("Acro Mode", &Settings::droneAcroMode, { "Enables direct control mode", "especially for racing." });
+	}
+}
+
+/*
+void updateMenuIKT()
+{
+	menu.CheckKeys(&controls, std::bind(menuInit), std::bind(menuClose));
+
+	if (menu.CurrentMenu("mainmenu")) {
+		menu.Title("LeFix Drone");
+
+		int shiftModeTemp = settings.ShiftMode;
+		std::vector<std::string> gearboxModes = {
+			"Sequential",
+			"H-pattern",
+			"Automatic"
+		};
+
+		menu.StringArray("Gearbox", gearboxModes, &shiftModeTemp, { "Choose your gearbox!" });
+		if (shiftModeTemp != settings.ShiftMode) {
+			settings.ShiftMode = shiftModeTemp;
+			setShiftMode(shiftModeTemp);
+		}
+
+		menu.MenuOption("Mod options", "optionsmenu", { "Find all mod-related settings here!" });
+		menu.MenuOption("Controls", "controlsmenu", { "For your keyboard and controller." });
+		menu.MenuOption("Wheel Options", "wheelmenu", { "Set up your steering wheel." });
+		menu.MenuOption("HUD Options", "hudmenu", { "Wanna move HUD elements around or",
+			"disable things? Imperial or metric?" });
+		//menu.MenuOption("Menu Options", "menumenu"); 
+		menu.MenuOption("Debug", "debugmenu", { "Technical details and options." });
+
+		int activeIndex = 0;
+		std::string activeInputName;
+		switch (controls.PrevInput) {
+		case ScriptControls::Keyboard:
+			activeInputName = "Keyboard";
+			break;
+		case ScriptControls::Controller:
+			activeInputName = "Controller";
+			break;
+		case ScriptControls::Wheel:
+			activeInputName = "Wheel";
+			break;
+		}
+		std::vector<std::string> active = { activeInputName };
+		menu.StringArray("Active input", active, &activeIndex,
+		{ "Active input is automatically detected." });
+
+		int versionIndex = 0;
+		std::vector<std::string> version = { DISPLAY_VERSION };
+		menu.StringArray("Version", version, &versionIndex,
+		{ "Thank you for using this mod!","- ikt" });
+	}
+
+	if (menu.CurrentMenu("optionsmenu")) {
+		menu.Title("Mod options");
+		if (menu.BoolOption("Engine Damage", &settings.EngDamage,
+		{ "Damage the engine when over-revving and","when mis-shifting." })) {
+		}
+		if (menu.BoolOption("Engine Stalling", &settings.EngStall,
+		{ "Stall the engine when the wheel speed gets"," too low" })) {
+		}
+		if (menu.BoolOption("Engine Braking", &settings.EngBrake,
+		{ "Help the car braking by slowing down more","at high RPMs" })) {
+		}
+		if (menu.BoolOption("Clutch Bite", &settings.ClutchCatching,
+		{ "Simulate clutch biting action and clutch","interaction at near-stop speeds." })) {
+		}
+		if (menu.BoolOption("Clutch Shift (S)", &settings.ClutchShiftingS,
+		{ "Require holding the clutch to shift", "in sequential mode." })) {
+		}
+		if (menu.BoolOption("Clutch Shift (H)", &settings.ClutchShiftingH,
+		{ "Require holding the clutch to shift", "in H-pattern mode." })) {
+		}
+		if (menu.BoolOption("Default Neutral", &settings.DefaultNeutral,
+		{ "The car will be in neutral when you get in." })) {
+		}
+		if (menu.MenuOption("Fine-tuning", "finetuneoptionsmenu",
+		{ "Fine-tune the parameters above" })) {
+		}
+		if (menu.MenuOption("Misc. options", "miscoptionsmenu",
+		{ "Options that don't really have to do with","the gearbox simulation." })) {
+		}
+	}
+
+	if (menu.CurrentMenu("miscoptionsmenu")) {
+		menu.Title("Misc. options");
+		if (menu.BoolOption("Simple Bike", &settings.SimpleBike,
+		{ "Disables bike engine stalling and the","clutch bite simulation." })) {
+		}
+		if (menu.BoolOption("Hill gravity workaround", &settings.HillBrakeWorkaround,
+		{ "Gives the car a push to overcome","the games' default brakes at a stop." })) {
+		}
+		if (menu.BoolOption("Auto gear 1", &settings.AutoGear1,
+		{ "Automatically switch to first gear","when the car reaches a standstill." })) {
+		}
+		if (menu.BoolOption("Auto look back", &settings.AutoLookBack,
+		{ "Automatically look back whenever in","reverse gear." })) {
+		}
+		if (menu.BoolOption("Clutch + throttle start", &settings.ThrottleStart,
+		{ "Allow to start the engine by pressing","clutch and throttle, like in DiRT Rally." })) {
+		}
+	}
+}
+*/
+
+bool isAbleToStartFlight()
+{
+	return ( ENTITY::GET_ENTITY_SPEED(PLAYER::PLAYER_PED_ID()) < 0.2f &&			//Not moving
+		!ENTITY::IS_ENTITY_IN_WATER(PLAYER::PLAYER_PED_ID()) &&						//Not swimming
+		UI::IS_HUD_COMPONENT_ACTIVE(eHudComponent::HudComponentWeaponWheel) &&		//Weapon wheel active
+		PED::IS_PED_ON_FOOT(PLAYER::PLAYER_PED_ID()) &&								//On Foot
+		!PED::IS_PED_RUNNING_MOBILE_PHONE_TASK(PLAYER::PLAYER_PED_ID()) &&			//No Phone Call
+		!GAMEPLAY::GET_MISSION_FLAG() );											//No active mission
 }
 
 void startFlight()
@@ -274,955 +444,11 @@ void endFlightQuick()
 	CAM::RENDER_SCRIPT_CAMS(0, 0, 3000, FALSE, FALSE);
 }
 
-void disableMenuButtons()		//Disable all actions which are initiated by gamepad buttons used for navigating the menu
-{
-	CONTROLS::DISABLE_CONTROL_ACTION(2, eControl::ControlCharacterWheel, TRUE);	// Down
-}
-void disableDroneButtons()
+void disableFlightButtons()
 {
 	CONTROLS::DISABLE_CONTROL_ACTION(2, eControl::ControlCharacterWheel, TRUE);
 	CONTROLS::DISABLE_CONTROL_ACTION(2, eControl::ControlSelectWeapon, TRUE);	 //TOMTOM
 	CONTROLS::DISABLE_CONTROL_ACTION(2, eControl::ControlPhone, TRUE);
-}
-
-int menu_process_main()
-{
-	static int index = 0;
-
-	std::string caption = "LeFix Drone " + modVersion;
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::audioSub);
-	data.push_back(&Settings::camSub);
-	data.push_back(&Settings::controlSub);
-	data.push_back(&Settings::droneSub);
-	data.push_back(&Settings::gamepadSub);
-	data.push_back(&Settings::physxSub);
-	data.push_back(&Settings::visualSub);
-	data.push_back(&Settings::exitSub);
-	//data.push_back(&Settings::debugSub); //INDEV
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 500;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Return
-		if (gamepad.button_cancel) return exitNo;
-		//Submenu
-		if (gamepad.button_accept)
-		{
-			if (data.at(index) == &Settings::audioSub)		menu_process_audio();
-			if (data.at(index) == &Settings::camSub)		menu_process_camera_main();
-			if (data.at(index) == &Settings::controlSub)	menu_process_control();
-			if (data.at(index) == &Settings::droneSub)		menu_process_drone();
-			if (data.at(index) == &Settings::gamepadSub)	menu_process_gamepad();
-			if (data.at(index) == &Settings::physxSub)		menu_process_physx();if (data.at(index) == &Settings::visualSub)		menu_process_visual();
-			if (data.at(index) == &Settings::exitSub)
-			{
-				int exitCode = menu_process_exit();
-				if (exitCode != exitNo) return exitCode;
-			}
-			if (data.at(index) == &Settings::debugSub)		menu_process_debug(); //INDEV
-			waitTime += 200;
-		}
-	}
-}
-void menu_process_audio()
-{
-	static int index = 0;
-
-	std::string caption = "Audio";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::audioVolume);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_camera_main()
-{
-	int index = Settings::camMode.get();
-
-	std::string caption = "Camera";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	//Has to be same order as eCamMode enum
-	data.push_back(&Settings::camD1Sub);
-	data.push_back(&Settings::camD3Sub);
-	data.push_back(&Settings::camDFSub);
-	data.push_back(&Settings::camC1Sub);
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			while (Settings::camMode.get() != index) Settings::camMode.increase();
-
-			menu_beep();
-			drone->refreshCamMode();
-			clone->refreshCamMode();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-
-			waitTime += 100;
-		}
-		//Cam submenu
-		if (gamepad.button_accept)
-		{
-			if (data.at(index) == &Settings::camD1Sub)		menu_process_camera_D1();
-			if (data.at(index) == &Settings::camD3Sub)		menu_process_camera_D3();
-			if (data.at(index) == &Settings::camC1Sub)		menu_process_camera_C1();
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_camera_D1()
-{
-	static int index = 0;
-
-	std::string caption = "Drone First Person";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::camDrone1FOV);
-	data.push_back(&Settings::camDrone1Tilt);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_camera_D3()
-{
-	static int index = 0;
-
-	std::string caption = "Drone Third Person";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::camDrone3FOV);
-	data.push_back(&Settings::camDrone3Tilt);
-	data.push_back(&Settings::camDrone3YPos);
-	data.push_back(&Settings::camDrone3ZPos);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_camera_C1()
-{
-	static int index = 0;
-
-	std::string caption = "Player First Person";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::camClone1CloseFOV);
-	data.push_back(&Settings::camClone1InfFOV);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_control()
-{
-	static int index = 0;
-
-	std::string caption = "Control";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::contRcRatePR);
-	data.push_back(&Settings::contRcRateY);
-	data.push_back(&Settings::contExpoPR);
-	data.push_back(&Settings::contExpoY);
-	data.push_back(&Settings::contRateP);
-	data.push_back(&Settings::contRateR);
-	data.push_back(&Settings::contRateY);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			curvePlot.refreshData();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			curvePlot.draw();
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_drone()
-{
-	static int index = 0;
-
-	std::string caption = "Drone";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::droneMass);
-	data.push_back(&Settings::droneMaxRelLoad);
-	data.push_back(&Settings::droneMaxVel);
-	data.push_back(&Settings::drone3DFly);
-	data.push_back(&Settings::droneAcroMode);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_gamepad()
-{
-	static int index = 0;
-
-	std::string caption = "Gamepad";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::gamepadVib);
-	data.push_back(&Settings::gamepadInvPitch);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0) menu_beep();
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_physx()
-{
-	static int index = 0;
-
-	std::string caption = "Physics";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::physxGScale);
-	data.push_back(&Settings::physxColl);
-	data.push_back(&Settings::pidSub);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Submenu
-		if (gamepad.button_accept)
-		{
-			if (data.at(index) == &Settings::pidSub)		menu_process_pid();
-			waitTime += 200;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_pid()
-{
-	static int index = 0;
-
-	std::string caption = "PID";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::pidEnable);
-	data.push_back(&Settings::pidP);
-	data.push_back(&Settings::pidI);
-	data.push_back(&Settings::pidD);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			drone->refreshSettingsDynamic();
-			menu_beep();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-void menu_process_visual()
-{
-	static int index = 0;
-
-	std::string caption = "Visual";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::showCollider);
-	data.push_back(&Settings::showModel);
-	data.push_back(&Settings::showTrails);
-	data.push_back(&Settings::showStickCam);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
-}
-int menu_process_exit()
-{
-	static int index = 0;
-
-	std::string caption = "Exit";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::exitStart);
-	data.push_back(&Settings::exitHere);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-			Drone::refreshSettingsStatic();
-			drone->refreshSettingsDynamic();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Exit
-		if (gamepad.button_accept)
-		{
-			if (data.at(index) == &Settings::exitStart)		return exitStart;
-			if (data.at(index) == &Settings::exitHere)		return exitHere;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) return exitNo;
-	}
-}
-
-void menu_process_debug()
-{
-	static int index = 0;
-
-	std::string caption = "Debug";
-	const float lineWidth = 230.0;
-
-	std::vector<menuValue*> data;
-
-	data.push_back(&Settings::debugX);
-
-	data.shrink_to_fit();
-
-	DWORD waitTime = 200;
-	while (true)
-	{
-		if (waitTime != 0)
-		{
-			menu_beep();
-		}
-
-		// Pause after active line switch or changed value
-		DWORD maxTickCount = GetTickCount() + waitTime;
-		do
-		{
-			// Draw Menu
-			draw_caption(caption, lineWidth);
-			for (int i = 0; i < data.size(); i++) draw_data_line(*data.at(i), i, lineWidth, i == index);
-			disableMenuButtons(); //Disable all actions which are initiated by buttons used for navigating the menu
-			WAIT_LONG(0);
-			showTextboxBottom("Start Quadcopter Flight ~INPUT_FRONTEND_ACCEPT~", false);
-		} while (GetTickCount() < maxTickCount);
-		waitTime = 0;
-
-		//Increase
-		if (gamepad.button_right)
-		{
-			waitTime += 100;
-			(*data.at(index)).increase();
-		}
-		//Decrease
-		if (gamepad.button_left)
-		{
-			(*data.at(index)).decrease();
-			waitTime += 100;
-		}
-		//Move up
-		if (gamepad.button_up)
-		{
-			if (index == 0) index = (int)data.size();
-			index--;
-			waitTime += 100;
-		}
-		//Move down
-		if (gamepad.button_down)
-		{
-			index++;
-			if (index == data.size()) index = 0;
-			waitTime += 100;
-		}
-		//Mainmenu
-		if (gamepad.button_cancel) break;
-	}
 }
 
 void WAIT_LONG(DWORD waitTime)
@@ -1234,3 +460,4 @@ void WAIT_LONG(DWORD waitTime)
 		update();
 	} while (GetTickCount() < maxTickCount);
 }
+

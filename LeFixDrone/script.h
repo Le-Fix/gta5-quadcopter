@@ -1,48 +1,24 @@
 #pragma once
 
-#include "LeFixDrone.h"
-#include "SHV\main.h"
-
-#include "AudioHandler.h"
-#include "Clone.h"
-#include "TimeCycleManager.h"
-#include "Drone\Drone.h"
-#include "Input\Gamepad.h"
-
-#include "Menu\menu.h"
-
-#include "Utils\INIutils.hpp"
-#include "Utils\UIutils.hpp"
-
 #include <vector>
+
+#include "GTAVMenuBase\menu.h"
+#include "GTAVMenuBase\menucontrols.h"
 
 void ScriptMain();
 
-static void initialize();
+void initialize();
 
-static void update();
-static void updateFlight();
+void update();
+void updateFlight();
+void updateMenu();
 
-static void startFlight();
-static void endFlight(bool goBack);
-static void endFlightQuick();
+bool isAbleToStartFlight();
 
-static void disableDroneButtons();
-static void disableMenuButtons();
+void startFlight();
+void endFlight(bool goBack);
+void endFlightQuick();
 
-static int  menu_process_main();
-static void menu_process_audio();
-static void menu_process_camera_main();
-static void menu_process_camera_D1();
-static void menu_process_camera_D3();
-static void menu_process_camera_C1();
-static void menu_process_control();
-static void menu_process_drone();
-static void menu_process_gamepad();
-static void menu_process_physx();
-static void menu_process_pid();
-static void menu_process_visual();
-static int  menu_process_exit();
-static void menu_process_debug();
+void disableFlightButtons();
 
-static void WAIT_LONG(DWORD waitTime);
+void WAIT_LONG(DWORD waitTime);

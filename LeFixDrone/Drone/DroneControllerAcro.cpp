@@ -26,7 +26,7 @@ void DroneControllerAcro::update(const DroneState &currentState, const float &st
 	contThrottle = inputThrottle; //Linear
 
 	 //Negative throttle
-	if (!Settings::drone3DFly.get() && contThrottle < 0.0f) contThrottle = 0.0f;
+	if (!Settings::drone3DFly && contThrottle < 0.0f) contThrottle = 0.0f;
 
 	float contYaw   = Steuerung::calculateDegSecYaw(inputYaw);
 	float contRoll  = Steuerung::calculateDegSecRoll(inputRoll);

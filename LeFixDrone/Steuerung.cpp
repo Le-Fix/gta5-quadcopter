@@ -2,17 +2,17 @@
 
 float Steuerung::calculateDegSecPitch(const float& inputP)
 {
-	return calculateDegSec(inputP, Settings::contRcRatePR.get(), Settings::contRateP.get(), Settings::contExpoPR.get());
+	return calculateDegSec(inputP, Settings::contRcRatePR, Settings::contRateP, Settings::contExpoPR);
 }
 
 float Steuerung::calculateDegSecRoll(const float& inputR)
 {
-	return calculateDegSec(inputR, Settings::contRcRatePR.get(), Settings::contRateR.get(), Settings::contExpoPR.get());
+	return calculateDegSec(inputR, Settings::contRcRatePR, Settings::contRateR, Settings::contExpoPR);
 }
 
 float Steuerung::calculateDegSecYaw(const float& inputY)
 {
-	return calculateDegSec(inputY, Settings::contRcRateY.get(), Settings::contRateY.get(), Settings::contExpoY.get());
+	return calculateDegSec(inputY, Settings::contRcRateY, Settings::contRateY, Settings::contExpoY);
 }
 
 float Steuerung::calculateDegSec(const float& input, const float& rcRate, const float& gRate, const float& expo) {
