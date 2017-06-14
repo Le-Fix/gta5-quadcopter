@@ -148,7 +148,6 @@
     <ClInclude Include="Drone\PID_Quat.h" />
     <ClInclude Include="Drone\PID_Vect.h" />
     <ClInclude Include="script.h" />
-    <ClInclude Include="Input\keyboard.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Steuerung.h" />
     <ClInclude Include="Graphics\StickPlot.h" />
@@ -178,7 +177,6 @@
     <ClCompile Include="Drone\PID_Quat.cpp" />
     <ClCompile Include="Drone\PID_Vect.cpp" />
     <ClCompile Include="script.cpp" />
-    <ClCompile Include="Input\keyboard.cpp" />
     <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Steuerung.cpp" />
     <ClCompile Include="Graphics\StickPlot.cpp" />

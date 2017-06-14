@@ -1,10 +1,14 @@
 #pragma once
+#include <Windows.h>
 
+#include <vector>
 #include <string>
 
-class Settings
-{
+class Settings {
 public:
+	static void SetFile(const std::string &filepath);
+	static void Save();
+	static void Load();
 
 	//AUDIO
 	static float audioVolume;
@@ -37,12 +41,6 @@ public:
 	static float physxGScale;
 	static bool physxColl;
 
-	//EXIT
-
-	//DEBUG
-	static int debugX;
-
-	//SAVE LOAD PATH
-	static std::string filePath;
+private:
+	static std::string _filepath;
 };
-

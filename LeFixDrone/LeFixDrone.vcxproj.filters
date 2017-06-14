@@ -102,9 +102,6 @@
     <ClInclude Include="GTAVMenuBase\menu.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Input\keyboard.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -186,9 +183,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="GTAVMenuBase\menucontrols.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Input\keyboard.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

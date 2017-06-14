@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LeFixDrone.h"
+
 #include <vector>
 
 #include "GTAVMenuBase\menu.h"

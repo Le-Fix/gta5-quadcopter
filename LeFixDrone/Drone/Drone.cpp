@@ -12,81 +12,45 @@ const float Drone::gravity(20.0f); //Force has factor 0.5f
 
 const Vector3f Drone::camDefaultOffsetLocal(0.0f, 0.05f, 0.00f); //Default Camera Position
 const Quaternionf Drone::colliderRotLocal = Quaternionf(AngleAxisf(DegToRad(90.0f), Vector3f(0.0f, 1.0f, 0.0f))); //Rotation of collider //Indev angle 90!!
+const Vector3f Drone::propPosLocal[NUM_PROP] = { Vector3f(0.5f, 0.5f, 0.0f), Vector3f(0.5f, -0.5f, 0.0f), Vector3f(-0.5f, -0.5f, 0.0f), Vector3f(-0.5f, 0.5f, 0.0f) };
 
 float Drone::maxThrust, Drone::dragCoef; //calculated
 Quaternionf Drone::cam1RotLocal, Drone::cam3RotLocal;
-Vector3f Drone::propPosLocal[NUM_PROP];
+
 
 //--------------------STATIC METHODS-------------------------
 
-void Drone::refreshSettingsStatic()
+void Drone::applyDragThrust()
 {
-	//AUDIO source position
-	float dist = 0.5f;
-	propPosLocal[FR] = Vector3f(dist, dist, 0.0f);
-	propPosLocal[BR] = Vector3f(dist, -dist, 0.0f);
-	propPosLocal[BL] = Vector3f(-dist, -dist, 0.0f);
-	propPosLocal[BL] = Vector3f(-dist, dist, 0.0f);
-
-	//CAMERA
-	cam1RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone1Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
-	cam3RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone3Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
-
-	//Dependent stats
 	float g = gravity*Settings::physxGScale;
+	//Dependent stats
 	maxThrust = g * (1.0f + Settings::droneMaxRelLoad);
 	dragCoef = sqrtf( (maxThrust*maxThrust - g*g) ) / (Settings::droneMaxVel*Settings::droneMaxVel); // sqrt(t*t-g*g)/(vel*vel)
 }
 
 //--------------------MEMBER PUBLIC---------------------------
 
-void Drone::refreshSettingsDynamic()
+void Drone::applyController()
 {
-	//Cams set FOV
-	CAM::SET_CAM_FOV(cam1, (float)Settings::camDrone1FOV);
-	CAM::SET_CAM_FOV(cam3, (float)Settings::camDrone3FOV);
-
-	//Cam3 atatch at new coord
-	Vector3f cam3PosDrone = Vector3f(0.0f, Settings::camDrone3YPos, Settings::camDrone3ZPos) + camDefaultOffsetLocal;
-	Vector3f cam3PosColld = colliderRotLocal.conjugate().toRotationMatrix() * cam3PosDrone;
-	CAM_X::ATTACH_CAM_TO_ENTITY(cam3, collider, cam3PosColld, TRUE);
-
-	//PTFX
-	setTrails(Settings::showTrails);
-
-	//Set collider invisble before model visibility is set because model is attached to it
-	ENTITY::SET_ENTITY_VISIBLE(collider, Settings::showCollider, FALSE);
-
-	//Attached stuff (frisbees and mics) is automatically set
-	ENTITY::SET_ENTITY_VISIBLE(modelCase, Settings::showModel, FALSE);
-
-	//New phyiscs params: mass and gscale
-	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, Settings::droneMass, Settings::physxGScale, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f);
-
-	//Collision
-	ENTITY::SET_ENTITY_COLLISION(collider, Settings::physxColl, TRUE);
-
 	//Controller
 	delete controller;
 	if (Settings::droneAcroMode)
 	{
 		controller = new DroneControllerAcro();
-	} else {
+	}
+	else {
 		controller = new DroneControllerLevel();
 	}
 	resetHistory();
+}
 
-	//PID
-	if (Settings::pidEnable)
-	{
-		OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  2.0f,  1.0f,  0.0f, -1.0f, -1.0f, -1.0f); //Low Dampening
-	} else {
-		OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  10.0f,  10.0f,  10.0f, -1.0f, -1.0f, -1.0f); //Big Dampening
-	}
-	pidRot.reset();
-	pidRot.kP = Settings::pidP;
-	pidRot.kI = Settings::pidI;
-	pidRot.kD = Settings::pidD;
+void Drone::applyCollider()
+{
+	//New phyiscs params: mass and gscale
+	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, Settings::droneMass, Settings::physxGScale, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f);
+
+	//Collision
+	ENTITY::SET_ENTITY_COLLISION(collider, Settings::physxColl, TRUE);
 
 	//LOAD NEW PHYSICS? (SET STATIC THEN DYNAMIC AGAIN)
 	ENTITY::SET_ENTITY_DYNAMIC(collider, FALSE);
@@ -94,8 +58,29 @@ void Drone::refreshSettingsDynamic()
 	currentState.apply(); //Get velocity back
 }
 
-void Drone::refreshCamMode()
+void Drone::applyPID()
 {
+	pidRot.reset();
+	pidRot.kP = Settings::pidP;
+	pidRot.kI = Settings::pidI;
+	pidRot.kD = Settings::pidD;
+}
+
+void Drone::applyCam()
+{
+	//STATIC Tilt
+	Drone::cam1RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone1Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
+	Drone::cam3RotLocal = Quaternionf(AngleAxisf(DegToRad((float)Settings::camDrone3Tilt), Vector3f(1.0f, 0.0f, 0.0f)));
+
+	//FOV
+	CAM::SET_CAM_FOV(cam1, (float)Settings::camDrone1FOV);
+	CAM::SET_CAM_FOV(cam3, (float)Settings::camDrone3FOV);
+
+	//Cam3 attach at new coord
+	Vector3f cam3PosDrone = Vector3f(0.0f, Settings::camDrone3YPos, Settings::camDrone3ZPos) + camDefaultOffsetLocal;
+	Vector3f cam3PosColld = colliderRotLocal.conjugate().toRotationMatrix() * cam3PosDrone;
+	CAM_X::ATTACH_CAM_TO_ENTITY(cam3, collider, cam3PosColld, TRUE);
+
 	switch (Settings::camMode)
 	{
 	case camModeD1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
@@ -105,8 +90,20 @@ void Drone::refreshCamMode()
 	}
 }
 
+void Drone::applyVisual()
+{
+	//PTFX
+	setTrails(Settings::showTrails);
+
+	//Set collider invisble before model visibility is set because model is attached to it
+	ENTITY::SET_ENTITY_VISIBLE(collider, Settings::showCollider, FALSE);
+
+	//Attached stuff (frisbees and mics) is automatically set
+	ENTITY::SET_ENTITY_VISIBLE(modelCase, Settings::showModel, FALSE);
+}
+
 Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
-	: camF(10.0f)
+	: camF(5.0f)
 {
 	//p_rc_handset 2553089994 //prop_cs_power_cell 1456723945 //prop_c4_final 3028688567 //prop_microphone_02 933500565 //p_ld_frisbee_01 3024733075
 	Hash colliderHash = -589090886; //Big box 2781083456
@@ -125,7 +122,7 @@ Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
 	ENTITY::SET_ENTITY_COLLISION(collider, TRUE, TRUE);
 	ENTITY::SET_ENTITY_RECORDS_COLLISIONS(collider, TRUE);
 	ENTITY::SET_ENTITY_VISIBLE(collider, TRUE, FALSE);
-	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, -1.0f, -1.0f, -1.0f, 20.0f, 0.3f); //-1.0 Values changed elsewhere
+	OBJECT::SET_OBJECT_PHYSICS_PARAMS(collider, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 4.0f, 4.0f, 0.0f, -1.0f, 20.0f, 0.3f); //-1.0 Values changed elsewhere
 
 	//Model
 	modelCase = OBJECT::CREATE_OBJECT(3028688567, 0.0f, 0.0f, 0.0f, FALSE, TRUE, FALSE);
@@ -185,7 +182,11 @@ Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
 	currentState = DroneState(collider, colliderRotLocal);
 	currentState.set(rot, pos, vel);
 
-	refreshSettingsDynamic();
+	applyCollider();
+	applyController();
+	applyPID();
+	applyVisual();
+	applyCam();
 }
 
 Drone::~Drone()

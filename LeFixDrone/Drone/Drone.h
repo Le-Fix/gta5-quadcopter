@@ -15,10 +15,13 @@ using namespace Eigen;
 class Drone
 {
 public:
-	static void refreshSettingsStatic();
+	static void applyDragThrust();
 	//Member
-	void refreshSettingsDynamic();
-	void refreshCamMode();
+	void applyCollider();
+	void applyController();
+	void applyPID();
+	void applyCam();
+	void applyVisual();
 
 	Drone(Vector3f pos, Vector3f vel, Quaternionf rot);
 	~Drone();
@@ -79,8 +82,8 @@ private:
 	static const Vector3f camDefaultOffsetLocal;
 
 	//Private Static
+	static const Vector3f propPosLocal[NUM_PROP];
 	static float maxThrust, dragCoef;
 	static Quaternionf cam1RotLocal, cam3RotLocal;
-	static Vector3f propPosLocal[NUM_PROP];
 };
 

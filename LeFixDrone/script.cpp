@@ -4,10 +4,8 @@
 //end location
 //switch to fpv and animate goggles
 
-
 #include "script.h"
 
-#include "LeFixDrone.h"
 #include "SHV\main.h"
 
 #include "AudioHandler.h"
@@ -15,7 +13,8 @@
 #include "TimeCycleManager.h"
 #include "Drone\Drone.h"
 #include "Input\Gamepad.h"
-#include "Input\keyboard.h"
+
+#include "GTAVMenuBase\menukeyboard.h"
 
 #include "Utils\INIutils.hpp"
 #include "Utils\UIutils.hpp"
@@ -24,7 +23,7 @@
 #include "Graphics\StickPlot.h"
 #include "nativesExtended.h"
 
-std::string modVersion = "v1.2 pre";
+std::string modVersion = "v1.2";
 
 NativeMenu::Menu menu;
 NativeMenu::MenuControls menuControl;
@@ -33,6 +32,8 @@ Drone *drone = nullptr;
 Clone *clone = nullptr;
 
 Gamepad gamepad;
+
+eEXIT currentExitCode = exitNo;
 
 StickPlot stickPlot(&gamepad);
 CurvePlot curvePlot(&gamepad);
@@ -45,20 +46,26 @@ void initialize()
 	std::string audioPath80 = GetCurrentModulePath() + "LeFixDrone\\AudioHigh.wav";
 
 	//Menu
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuKey]		= str2key("SPACE");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuUp]		= str2key("UP");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuDown]	= str2key("DOWN");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuLeft]	= str2key("LEFT");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuRight]	= str2key("RIGHT");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuSelect]	= str2key("RETURN");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuCancel]	= str2key("BACKSPACE");
+	menu.menux = 0.13f;
+	menu.menuy = 0.06f;
+
+	menuControl.ControllerButton1 = eControl::ControlFrontendAccept;
+	menuControl.ControllerButton2 = eControl::ControlFrontendCancel;
+
+	//menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuKey]		= str2key("SPACE"); % No keyboard assignment for entering menu
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuUp]		= NativeMenu::str2key("NUM8");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuDown]	= NativeMenu::str2key("NUM2");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuLeft]	= NativeMenu::str2key("NUM4");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuRight]	= NativeMenu::str2key("NUM6");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuSelect]	= NativeMenu::str2key("NUM5");
+	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuCancel]	= NativeMenu::str2key("NUM0");
 
 	menu.LoadMenuTheme(std::wstring(path_settings_menu.begin(), path_settings_menu.end()).c_str());
 
 	//Settings
-	Settings::filePath = path_settings_mod;
-	//Settings::load();
-	//Settings::save();
+	Settings::SetFile(path_settings_mod);
+	Settings::Load();
+	Settings::Save();
 
 	//Audio
 	AudioHandler::initialize();
@@ -67,10 +74,9 @@ void initialize()
 	AudioHandler::loadFile(audioPath80.c_str());
 	AudioHandler::createBuffer(hgh);
 
-	Drone::refreshSettingsStatic();
+	Drone::applyDragThrust(); //Static
 
-	//Gamepad
-	gamepad = Gamepad();
+	stickPlot.refreshData();
 }
 
 void ScriptMain()
@@ -81,7 +87,7 @@ void ScriptMain()
 	while (true) {
 
 		update();
-											  
+
 		if (isAbleToStartFlight())	//Start Flight?
 		{
 			//Textbox checken
@@ -100,6 +106,19 @@ void ScriptMain()
 			boxFromModItself = false; //Mod doesn't print box!
 		}
 	}
+}
+
+void onMenuEnter() {
+	Settings::Load();
+	//float tscale = 0.05f;
+	//GAMEPLAY::SET_TIME_SCALE(tscale);
+	//AudioHandler::setTimeScale(tscale);
+}
+void onMenuExit() {
+	Settings::Save();
+	//float tscale = 1.0f;
+	//GAMEPLAY::SET_TIME_SCALE(tscale);
+	//AudioHandler::setTimeScale(tscale);
 }
 
 void update()
@@ -136,18 +155,31 @@ void update()
 		{
 			Settings::camMode++;
 			if (Settings::camMode > LeFixDrone::camModeC3) Settings::camMode = 0;
-			drone->refreshCamMode();
+			drone->applyCam();
 			clone->refreshCamMode();
 		}
 		//CAM::SET_CAM_AFFECTS_AIMING() //TOMTOM
 
 		//Fast Exit?
-		if (PLAYER::IS_PLAYER_DEAD(PLAYER::PLAYER_ID())) endFlightQuick();
-		if (PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE)) endFlightQuick();
-		if (GAMEPLAY::GET_MISSION_FLAG()) endFlightQuick();
-
-		//Menu
-		updateMenu();
+		if (
+			PLAYER::IS_PLAYER_DEAD(PLAYER::PLAYER_ID()) ||
+			PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE) ||
+			GAMEPLAY::GET_MISSION_FLAG())
+		{
+			endFlightQuick();
+			currentExitCode = exitNo;
+		}
+		else if (currentExitCode == exitNo)
+		{
+			updateMenu();
+			if (currentExitCode != exitNo)
+			{
+				menu.CloseMenu();
+				onMenuExit();
+				endFlight(currentExitCode == exitStart);
+				currentExitCode = exitNo;
+			}
+		}
 	}
 	WAIT(0);
 }
@@ -173,150 +205,179 @@ void updateFlight()
 	WEAPON::SET_CURRENT_PED_WEAPON(PLAYER::PLAYER_PED_ID(), 0xA2719263, TRUE); //unarmed
 }
 
-void menuInit() {}
-void menuClose() {}
 void updateMenu()
 {
-	menu.CheckKeys(&menuControl, std::bind(menuInit), std::bind(menuClose));
+	menu.CheckKeys(&menuControl, std::bind(onMenuEnter), std::bind(onMenuExit));
 
 	if (menu.CurrentMenu("mainmenu")) {
-		menu.Title("LeFix Drone");
-
-		menu.MenuOption("Audio", "audiomenu", { "All audio settings here." });
+		menu.Title("Quadcopter Mod");
+		menu.FloatOption("Volume", &Settings::audioVolume, 0.0f, 1.0f, 0.1f, { "Global volume for all mod-related sounds." });
 		menu.MenuOption("Camera", "cameramenu", { "Settings for all camera modes." });
-		menu.MenuOption("Control", "controlmenu", { "Settings for conversion of gamepad", "output to drone input." });
+		menu.MenuOption("Control", "controlmenu", { "Settings for conversion of gamepad output to drone input." });
 		menu.MenuOption("Drone", "dronemenu", { "Drone specific settings." });
 		menu.MenuOption("Gamepad", "gamepadmenu", { "Gamepad/input device specific settings." });
 		menu.MenuOption("Physics", "physxmenu", { "General physics settings." });
-		menu.MenuOption("Visual", "visualmenu", { "General physics settings." });
+		menu.MenuOption("Visual", "visualmenu", { "Visibility, light trails..." });
 		menu.MenuOption("Exit", "exitmenu", { "Exit drone mode here." });
 	}
 
 	if (menu.CurrentMenu("cameramenu")) {
+		//Title
 		menu.Title("Camera");
+
+		//Apply bools
+		bool d = false;
+		bool c = false;
+
+		//Camera Mode
+		int temp = Settings::camMode;
+		menu.StringArray("Cam Mode", { "Drone 1st Person", "Drone 3rd Person", "Drone Follow", "Player Dynamic" }, &Settings::camMode, { "Choose your camera mode and adjust its specific settings. It can be changed with the assigned button GTA V." });
+		if (temp != Settings::camMode)
+		{
+			switch (Settings::camMode)
+			{
+			case LeFixDrone::camModeD1:
+			case LeFixDrone::camModeD3:
+			case LeFixDrone::camModeDF:
+				d = true;
+				break;
+			case LeFixDrone::camModeC1:
+				c = true;
+				break;
+			}
+		}
+
+		//Specific Camera Settings
+		switch (Settings::camMode)
+		{
+			case LeFixDrone::camModeD1 :
+				d = d || menu.IntOption("Field of View", &Settings::camDrone1FOV, 60, 120);
+				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone1Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
+				break;
+			case LeFixDrone::camModeD3:
+				d = d || menu.IntOption("Field of View", &Settings::camDrone3FOV, 60, 120);
+				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone3Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
+				d = d || menu.FloatOption("Camera Y Position", &Settings::camDrone3YPos, -5.0f, 0.0f, 0.05f);
+				d = d || menu.FloatOption("Camera Z Position", &Settings::camDrone3ZPos, -2.0f, 2.0f, 0.05f);
+				break;
+			case LeFixDrone::camModeDF:
+				break;
+			case LeFixDrone::camModeC1:
+				menu.IntOption("Field of View [Close]", &Settings::camClone1CloseFOV, 45, 120, 1, { "The FOV is dynamic. Sets the the FOV at a reference distance of 2 meters." });
+				menu.IntOption("Field of View [Far]", &Settings::camClone1FarFOV, 0, 45, 1, { "The FOV is dynamic. Sets the the FOV at an infinite distance." });
+				break;
+		}
+
+		//Apply Changes
+		if(d) drone->applyCam();
+		if(c) clone->refreshCamMode();
 	}
 
 	if (menu.CurrentMenu("controlmenu")) {
+		//Title
 		menu.Title("Control");
-		menu.FloatOption("RC Rate PR",	&Settings::contRcRatePR,	0.1f, 3.0f, 0.1f, { "Linear factor for Pitch and Roll." });
-		menu.FloatOption("RC Rate Y",	&Settings::contRcRateY,		0.1f, 3.0f, 0.1f, { "Linear factor for Yaw." });
-		menu.FloatOption("Expo PR",		&Settings::contExpoPR,		0.0f, 1.0f, 0.02f, { "Linear and Cubic parts.", "Effects small inputs.", "Doesn't change max rotation velocity." });
-		menu.FloatOption("Expo Y",		&Settings::contExpoY,		0.0f, 1.0f, 0.02f, { "Linear factor for Yaw." });
+
+		//Apply bools
+		bool b = false;
+
+		//Options
+		b = b || menu.FloatOption("RC Rate PR",	&Settings::contRcRatePR,	0.1f, 3.0f, 0.1f, { "Linear factor for Pitch and Roll." });
+		b = b || menu.FloatOption("RC Rate Y",	&Settings::contRcRateY,		0.1f, 3.0f, 0.1f, { "Linear factor for Yaw." });
+		b = b || menu.FloatOption("Expo PR",	&Settings::contExpoPR,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
+		b = b || menu.FloatOption("Expo Y",		&Settings::contExpoY,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
+		b = b || menu.FloatOption("Rate P(itch)",&Settings::contRateP,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		b = b || menu.FloatOption("Rate R(oll)",&Settings::contRateR,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		b = b || menu.FloatOption("Rate Y(aw)",	&Settings::contRateY,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		
+		//Apply changes
+		if(b) curvePlot.refreshData();
+
+		//Everytime
+		curvePlot.draw();
 	}
 	
 	if (menu.CurrentMenu("dronemenu")) {
+		//Title
 		menu.Title("Drone");
-		menu.FloatOption("Mass", &Settings::droneMass, 0.1f, 10.0f, 0.1f, { "Drone mass" });
-		menu.FloatOption("Max rel. Load", &Settings::droneMaxRelLoad, 0.0f, 5.0f, 0.1f, { "Maximum extra load the drone","is capable to carry." });
-		menu.FloatOption("Max Velocity", &Settings::droneMaxVel, 10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity", "the drone can achieve.", "Implicitly sets drag coefficient" });
-		menu.BoolOption("3D Flying", &Settings::drone3DFly, { "Enables downward/reverse thrust." });
-		menu.BoolOption("Acro Mode", &Settings::droneAcroMode, { "Enables direct control mode", "especially for racing." });
+
+		//Apply bools
+		bool m = false;
+		bool s = false;
+		bool c = false;
+
+		//Options
+		m = m || menu.FloatOption("Mass",			&Settings::droneMass,		 0.1f,  10.0f, 0.1f, { "Drone mass" });
+		s = s || menu.FloatOption("Max rel. Load",	&Settings::droneMaxRelLoad,	 0.0f,   5.0f, 0.1f, { "Maximum extra load the drone is capable to carry." });
+		s = s || menu.FloatOption("Max Velocity",	&Settings::droneMaxVel,		10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity the drone can achieve. Implicitly determines the drag coefficient." });
+		         menu.BoolOption("3D Flying",		&Settings::drone3DFly,		{ "Enables downward/reverse thrust." });
+		c = c || menu.BoolOption("Acro Mode",		&Settings::droneAcroMode,	{ "Enables direct control mode especially for racing." });
+		
+		//Apply Changes
+		if (m) drone->applyCollider();
+		if (s) Drone::applyDragThrust();
+		if (c) drone->applyController();
 	}
+
+	if (menu.CurrentMenu("gamepadmenu"))
+	{
+		//Title
+		menu.Title("Gamepad");
+
+		//Options
+		menu.BoolOption("Vibration", &Settings::gamepadVib, { "Toggle gamepad vibration.", "(Heavy collisions)" });
+		menu.BoolOption("Using inverted cam [GTA5]", &Settings::gamepadInvPitch, { "Enabling inverted camera in the GTA5 options will invert the pitch input, this setting will invert it again." });
+	}
+
+	if (menu.CurrentMenu("physxmenu"))
+	{
+		//Title
+		menu.Title("Physics");
+
+		//Options
+		bool g = menu.FloatOption("Gravity Scale", &Settings::physxGScale, 0.5f, 2.0f, 0.1f, { "Simple gravity multiplier. For fast outdoor flying >1 is probably more fun and for indoor flying <1 is probably easier." });
+		bool c = menu.BoolOption("Collision", &Settings::physxColl, { "Toggle drone collision." });
+
+		//Apply Changes
+		if (g) Drone::applyDragThrust();
+		if (g || c)	drone->applyCollider();
+	}
+
+	if (menu.CurrentMenu("visualmenu"))
+	{
+		//Title
+		menu.Title("Visual");
+
+		//Apply Bools
+		bool v = false;
+
+		//Options
+		menu.BoolOption("Sticks", &Settings::showStickCam, { "Prints the stick position on the bottom of the screen. Intended for screen capture." });
+		v = v || menu.BoolOption("Trails", &Settings::showTrails, { "Adds some particle effects at the prop positions." });
+		v = v || menu.BoolOption("Collision Box Visible", &Settings::showCollider, { "Visibility of the collision box model, which is does all the physics." });
+		v = v || menu.BoolOption("Drone Model Visible", &Settings::showModel, { "Visibility of the drone model, which is attached to the collsion box." });
+
+		//Apply
+		if (v) drone->applyVisual();
+	}
+
+	if (menu.CurrentMenu("exitmenu"))
+	{
+		//Title
+		menu.Title("Exit");
+
+		//Options
+		if (menu.MenuOption("Go back to player", "dummy", { "Exit drone mode and go back to start location." }))
+		{
+			currentExitCode = exitStart;
+		}
+		if (menu.MenuOption("Teleport player here", "dummy", { "Exit drone mode but teleport player to current location." }))
+		{
+			currentExitCode = exitHere;
+		}
+	}
+
+	menu.EndMenu();
 }
-
-/*
-void updateMenuIKT()
-{
-	menu.CheckKeys(&controls, std::bind(menuInit), std::bind(menuClose));
-
-	if (menu.CurrentMenu("mainmenu")) {
-		menu.Title("LeFix Drone");
-
-		int shiftModeTemp = settings.ShiftMode;
-		std::vector<std::string> gearboxModes = {
-			"Sequential",
-			"H-pattern",
-			"Automatic"
-		};
-
-		menu.StringArray("Gearbox", gearboxModes, &shiftModeTemp, { "Choose your gearbox!" });
-		if (shiftModeTemp != settings.ShiftMode) {
-			settings.ShiftMode = shiftModeTemp;
-			setShiftMode(shiftModeTemp);
-		}
-
-		menu.MenuOption("Mod options", "optionsmenu", { "Find all mod-related settings here!" });
-		menu.MenuOption("Controls", "controlsmenu", { "For your keyboard and controller." });
-		menu.MenuOption("Wheel Options", "wheelmenu", { "Set up your steering wheel." });
-		menu.MenuOption("HUD Options", "hudmenu", { "Wanna move HUD elements around or",
-			"disable things? Imperial or metric?" });
-		//menu.MenuOption("Menu Options", "menumenu"); 
-		menu.MenuOption("Debug", "debugmenu", { "Technical details and options." });
-
-		int activeIndex = 0;
-		std::string activeInputName;
-		switch (controls.PrevInput) {
-		case ScriptControls::Keyboard:
-			activeInputName = "Keyboard";
-			break;
-		case ScriptControls::Controller:
-			activeInputName = "Controller";
-			break;
-		case ScriptControls::Wheel:
-			activeInputName = "Wheel";
-			break;
-		}
-		std::vector<std::string> active = { activeInputName };
-		menu.StringArray("Active input", active, &activeIndex,
-		{ "Active input is automatically detected." });
-
-		int versionIndex = 0;
-		std::vector<std::string> version = { DISPLAY_VERSION };
-		menu.StringArray("Version", version, &versionIndex,
-		{ "Thank you for using this mod!","- ikt" });
-	}
-
-	if (menu.CurrentMenu("optionsmenu")) {
-		menu.Title("Mod options");
-		if (menu.BoolOption("Engine Damage", &settings.EngDamage,
-		{ "Damage the engine when over-revving and","when mis-shifting." })) {
-		}
-		if (menu.BoolOption("Engine Stalling", &settings.EngStall,
-		{ "Stall the engine when the wheel speed gets"," too low" })) {
-		}
-		if (menu.BoolOption("Engine Braking", &settings.EngBrake,
-		{ "Help the car braking by slowing down more","at high RPMs" })) {
-		}
-		if (menu.BoolOption("Clutch Bite", &settings.ClutchCatching,
-		{ "Simulate clutch biting action and clutch","interaction at near-stop speeds." })) {
-		}
-		if (menu.BoolOption("Clutch Shift (S)", &settings.ClutchShiftingS,
-		{ "Require holding the clutch to shift", "in sequential mode." })) {
-		}
-		if (menu.BoolOption("Clutch Shift (H)", &settings.ClutchShiftingH,
-		{ "Require holding the clutch to shift", "in H-pattern mode." })) {
-		}
-		if (menu.BoolOption("Default Neutral", &settings.DefaultNeutral,
-		{ "The car will be in neutral when you get in." })) {
-		}
-		if (menu.MenuOption("Fine-tuning", "finetuneoptionsmenu",
-		{ "Fine-tune the parameters above" })) {
-		}
-		if (menu.MenuOption("Misc. options", "miscoptionsmenu",
-		{ "Options that don't really have to do with","the gearbox simulation." })) {
-		}
-	}
-
-	if (menu.CurrentMenu("miscoptionsmenu")) {
-		menu.Title("Misc. options");
-		if (menu.BoolOption("Simple Bike", &settings.SimpleBike,
-		{ "Disables bike engine stalling and the","clutch bite simulation." })) {
-		}
-		if (menu.BoolOption("Hill gravity workaround", &settings.HillBrakeWorkaround,
-		{ "Gives the car a push to overcome","the games' default brakes at a stop." })) {
-		}
-		if (menu.BoolOption("Auto gear 1", &settings.AutoGear1,
-		{ "Automatically switch to first gear","when the car reaches a standstill." })) {
-		}
-		if (menu.BoolOption("Auto look back", &settings.AutoLookBack,
-		{ "Automatically look back whenever in","reverse gear." })) {
-		}
-		if (menu.BoolOption("Clutch + throttle start", &settings.ThrottleStart,
-		{ "Allow to start the engine by pressing","clutch and throttle, like in DiRT Rally." })) {
-		}
-	}
-}
-*/
 
 bool isAbleToStartFlight()
 {
@@ -357,7 +418,6 @@ void startFlight()
 
 	drone = new Drone(dronePos, droneVel, droneRot);
 
-	drone->refreshCamMode();
 	clone->refreshCamMode();
 
 	//Fade in
@@ -422,6 +482,9 @@ void endFlight(bool goBack)
 }
 void endFlightQuick()
 {
+	//Close Menu
+	menu.CloseMenu();
+
 	//Delete clone
 	delete clone;
 	clone = nullptr;
