@@ -3,11 +3,11 @@
 
 
 DroneControllerLevel::DroneControllerLevel()
-	: endPos(0.0f, 0.0f, 100.0f), endHeading(0.0f), posPID()
+	: _endPos(0.0f, 0.0f, 100.0f), _endRot(0.0f, 0.0f, 0.0f, 1.0f), posPID()
 {
-	posPID.kP = 0.1f;
+	posPID.kP = 0.3f;
 	posPID.kI = 0.001f;
-	posPID.kD = 0.1f;
+	posPID.kD = 0.2f;
 }
 
 DroneControllerLevel::~DroneControllerLevel()
@@ -16,16 +16,14 @@ DroneControllerLevel::~DroneControllerLevel()
 
 void DroneControllerLevel::reset(const DroneState &currentState)
 {
-	endHeading = DegToRad(getHeading(currentState.rot._transformVector(Vector3f(0.0f, 1.0f, 0.0f))));
-	endPos = currentState.pos;
-	slerpPos = endPos;
+	float currentHeading = DegToRad(getHeading(currentState.rot._transformVector(Vector3f(0.0f, 1.0f, 0.0f))));
+	_endRot = Quaternionf(AngleAxisf(currentHeading, up));
+	_endPos = currentState.pos;
 	posPID.reset();
 }
 
 void DroneControllerLevel::update(const DroneState &currentState, const float &stick_left_x, const float &stick_left_y, const float &stick_right_x, const float &stick_right_y)
 {
-	static Vector3f up = Vector3f(0.0f, 0.0f, 1.0f);
-
 	float inputYaw = -stick_left_x;
 	float inputZ = stick_left_y;	//Pos. Up, Neg. Down
 	float inputY = stick_right_y;	//Pos. Forward, Neg. Backward
@@ -33,39 +31,54 @@ void DroneControllerLevel::update(const DroneState &currentState, const float &s
 
 	float dT = GAMEPLAY::GET_FRAME_TIME();
 
-	//Update end state
-	endHeading += DegToRad(180.0f) * inputYaw * dT;
-
-	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel*0.8f;
-
-	Quaternionf idleRot = Quaternionf(AngleAxisf(endHeading, up));
-	endPos += idleRot._transformVector(relDeltaPos);
-
-	slerpPos = (1.0f - dT)*slerpPos + dT*endPos;
+	//update End State
+	updateEndState(inputX, inputY, inputZ, inputYaw);
 
 	//Update PID
-	posPID.update(currentState.pos, slerpPos, dT);
+	posPID.update(currentState.pos, _endPos, dT);
 	Vector3f output = posPID.getOutput();
 
+	float norm = output.norm();
+	output /= norm; //normalize
+
 	//Infinite possibilities to achieve this acceleration axis
-	Quaternionf closeIdle = idleRot *			Quaternionf::FromTwoVectors(up,          idleRot.conjugate()._transformVector(output)); //Closest quat to idle
+	Quaternionf closeEnd  = _endRot *			Quaternionf::FromTwoVectors(up,          _endRot.conjugate()._transformVector(output)); //Closest quat to end
 	Quaternionf closeCurr = currentState.rot *	Quaternionf::FromTwoVectors(up, currentState.rot.conjugate()._transformVector(output)); //Closest quat to current
 
-	calcRot = closeCurr.slerp(dT*10.0f, closeIdle); //Slowly go to closest idle quat
+	_calcRot = closeCurr.slerp(0.4f, closeEnd); //Slowly go to closest idle quat
 	
-	//Calculated throttle
-	calcThrottle = 0.5f*(calcThrottle + output.dot(currentState.rot._transformVector(Vector3f(0.0, 0.0, 1.0f))));
+	//Current Drone Roation and desired Force direction
+	float alignment = output.dot(currentState.rot._transformVector(Vector3f(0.0, 0.0, 1.0f)));
+	
+	//Throttle cap
+	if (norm > 1.0f) norm = 1.0f;
+
+	_calcThrottle = norm * alignment;
 
 	//Negative throttle
-	if (!Settings::drone3DFly && calcThrottle < 0.0f) calcThrottle = 0.0f;
+	if (!Settings::drone3DFly && _calcThrottle < 0.0f) _calcThrottle = 0.0f;
+}
+
+void DroneControllerLevel::updateEndState(const float &inputX, const float &inputY, const float &inputZ, const float &inputYaw)
+{
+	float dT = GAMEPLAY::GET_FRAME_TIME();
+
+	//Relative Position Delta
+	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel*0.8f;
+
+	//Idle Quaternion
+	_endRot *= Quaternionf(AngleAxisf(DegToRad(180.0f) * inputYaw * dT, up));
+
+	//Transform Position Delta by Idle Quaternion
+	_endPos += _endRot._transformVector(relDeltaPos);
 }
 
 Quaternionf DroneControllerLevel::getDesiredRot()
 {
-	return calcRot;
+	return _calcRot;
 }
 
 float DroneControllerLevel::getThrottle()
 {
-	return calcThrottle;
+	return _calcThrottle;
 }

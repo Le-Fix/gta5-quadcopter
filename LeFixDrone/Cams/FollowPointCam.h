@@ -16,7 +16,7 @@ public:
 	Vector3f getPos();
 
 private:
-	Vector3f desiredPos, slerpPos, vel;
+	Vector3f endPos, slerpPos, vel;
 	float distance;
 };
 

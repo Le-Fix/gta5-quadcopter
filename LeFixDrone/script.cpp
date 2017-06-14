@@ -336,6 +336,7 @@ void updateMenu()
 		//Options
 		bool g = menu.FloatOption("Gravity Scale", &Settings::physxGScale, 0.5f, 2.0f, 0.1f, { "Simple gravity multiplier. For fast outdoor flying >1 is probably more fun and for indoor flying <1 is probably easier." });
 		bool c = menu.BoolOption("Collision", &Settings::physxColl, { "Toggle drone collision." });
+		menu.BoolOption("Use PID", &Settings::pidEnable, {"The desired rotation of the drone is achieved by a PID Controller in real world. When disabled the rotation gets set, undermines physics."});
 
 		//Apply Changes
 		if (g) Drone::applyDragThrust();
