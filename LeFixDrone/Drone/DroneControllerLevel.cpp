@@ -1,6 +1,7 @@
 #include "DroneControllerLevel.h"
 
-
+#include "../Settings.h"
+#include "../LeFixEnums.h"
 
 DroneControllerLevel::DroneControllerLevel()
 	: _endPos(0.0f, 0.0f, 100.0f), _endRot(0.0f, 0.0f, 0.0f, 1.0f), posPID()
@@ -66,8 +67,19 @@ void DroneControllerLevel::updateEndState(const float &inputX, const float &inpu
 	//Relative Position Delta
 	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel*0.8f;
 
-	//Idle Quaternion
-	_endRot *= Quaternionf(AngleAxisf(DegToRad(180.0f) * inputYaw * dT, up));
+	if (Settings::camMode == LeFix::camModeC1)
+	{
+		//Idle Quaternion
+		Camera currentCam = CAM::GET_RENDERING_CAM();
+		float remoteHeading =getHeading(CAM_X::GET_CAM_QUATERNION(currentCam)._transformVector(Vector3f(0.0f, 1.0f, 0.0f)));
+		_endRot = Quaternionf(AngleAxisf(DegToRad(remoteHeading), up));
+	}
+	else
+	{
+		//Idle Quaternion
+		_endRot *= Quaternionf(AngleAxisf(DegToRad(180.0f) * inputYaw * dT, up));
+
+	}
 
 	//Transform Position Delta by Idle Quaternion
 	_endPos += _endRot._transformVector(relDeltaPos);

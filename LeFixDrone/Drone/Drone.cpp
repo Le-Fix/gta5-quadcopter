@@ -4,7 +4,7 @@
 #include "..\TimeCycleManager.h"
 #include "..\Steuerung.h"
 
-using namespace LeFixDrone;
+using namespace LeFix;
 
 //-------------------STATIC VARIABLES-----------------------
 
@@ -83,9 +83,9 @@ void Drone::applyCam()
 
 	switch (Settings::camMode)
 	{
-	case camModeD1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
-	case camModeD3: CAM::SET_CAM_ACTIVE(cam3, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
-	case camModeDF: camF.setActive(); break;
+	case LeFix::camModeD1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
+	case LeFix::camModeD3: CAM::SET_CAM_ACTIVE(cam3, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
+	case LeFix::camModeDF: camF.setActive(); break;
 	default: break;
 	}
 }
@@ -137,10 +137,10 @@ Drone::Drone(Vector3f pos, Vector3f vel, Quaternionf rot)
 		float x, z, ry;
 		switch (n)
 		{
-		case FR: ry =  90.0f; x =  0.062f; z =  0.090f; break;
-		case BR: ry = 135.0f; x =  0.095f; z = -0.080f; break;
-		case BL: ry = 225.0f; x = -0.095f; z = -0.080f; break;
-		case FL: ry = 270.0f; x = -0.062f; z =  0.090f; break;
+		case LeFix::FR: ry =  90.0f; x =  0.062f; z =  0.090f; break;
+		case LeFix::BR: ry = 135.0f; x =  0.095f; z = -0.080f; break;
+		case LeFix::BL: ry = 225.0f; x = -0.095f; z = -0.080f; break;
+		case LeFix::FL: ry = 270.0f; x = -0.062f; z =  0.090f; break;
 		}
 		ENTITY::ATTACH_ENTITY_TO_ENTITY(modelProp[n], modelCase, 0, x, 0.030f, z, 0.0f, ry, 0.0f, FALSE, TRUE, FALSE, FALSE, 0, TRUE);
 	}
@@ -415,10 +415,10 @@ void Drone::updateForce(const float &contThrottle)
 void Drone::updateProps()
 {
 	//clockwise
-	prop[FR] = abs(appliedThrottle) + appliedRelMom.x() -appliedRelMom.y() + appliedRelMom.z(); //Front Right
-	prop[BR] = abs(appliedThrottle) - appliedRelMom.x() -appliedRelMom.y() - appliedRelMom.z(); //Rear  Right
-	prop[BL] = abs(appliedThrottle) - appliedRelMom.x() +appliedRelMom.y() + appliedRelMom.z(); //Rear  Left
-	prop[FL] = abs(appliedThrottle) + appliedRelMom.x() +appliedRelMom.y() - appliedRelMom.z(); //Front Left
+	prop[LeFix::FR] = abs(appliedThrottle) + appliedRelMom.x() -appliedRelMom.y() + appliedRelMom.z(); //Front Right
+	prop[LeFix::BR] = abs(appliedThrottle) - appliedRelMom.x() -appliedRelMom.y() - appliedRelMom.z(); //Rear  Right
+	prop[LeFix::BL] = abs(appliedThrottle) - appliedRelMom.x() +appliedRelMom.y() + appliedRelMom.z(); //Rear  Left
+	prop[LeFix::FL] = abs(appliedThrottle) + appliedRelMom.x() +appliedRelMom.y() - appliedRelMom.z(); //Front Left
 
 	//Get Maximum
 	float max = 0.0f;

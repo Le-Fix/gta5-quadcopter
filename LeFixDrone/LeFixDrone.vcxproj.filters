@@ -102,6 +102,9 @@
     <ClInclude Include="GTAVMenuBase\menu.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="LeFixEnums.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

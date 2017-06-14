@@ -70,7 +70,7 @@ void Clone::refreshCamMode()
 {
 	switch (Settings::camMode)
 	{
-	case camModeC1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
+	case LeFix::camModeC1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
 	default: break;
 	}
 }

@@ -154,7 +154,7 @@ void AudioHandler::loadFile(const char* c)
 	}
 }
 
-void AudioHandler::createBuffer(eRPM rpm)
+void AudioHandler::createBuffer(LeFix::eRPM rpm)
 {
 	alGenBuffers(1, &buffer[rpm]);									//Generate one OpenAL Buffer and link to "buffer"
 	alBufferData(buffer[rpm], format, buf, dataSize, frequency);		//Store the sound data in the OpenAL Buffer
@@ -203,12 +203,12 @@ void AudioHandler::setSourceSound(int prop, float speed)
 		switch (r)
 		{
 		//pitch difference ca 1.7f bzw. 0.59f
-		case mid:
+		case LeFix::mid:
 			gain = 1.0f - abs(0.4f - speed) / 0.4f; //0 bei 0%, 1 bei 40%, 0 bei 80%
 			pitch = 1.0f - (0.4f - speed) * 1.75f; //1.0f bei 40% 1.7 bei 80%
 			break;
 
-		case hgh:
+		case LeFix::hgh:
 			gain = 1.0f - (0.8f - speed) / 0.4f; //0 bei 40%, 1 bei 80%
 			if (gain > 1.0f) gain = 1.0f;
 			pitch = 1.0f - (0.8f - speed) * 1.0f; //0.6f bei 40%, 1.0f bei 80%,
@@ -220,7 +220,7 @@ void AudioHandler::setSourceSound(int prop, float speed)
 
 		gain *= Settings::audioVolume; //Global volume setting
 
-		if (Settings::camMode == camModeD1 || Settings::camMode == camModeD3) gain *= 0.2f; //Cam drone too close, turn volum down
+		if (Settings::camMode == LeFix::camModeD1 || Settings::camMode == LeFix::camModeD3) gain *= 0.2f; //Cam drone too close, turn volum down
 
 
 		alSourcef(source[4*r+prop], AL_PITCH, pitch);

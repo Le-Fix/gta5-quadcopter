@@ -143,6 +143,7 @@
     <ClInclude Include="Input\Gamepad.h" />
     <ClInclude Include="LeFixDrone.h" />
     <ClInclude Include="Graphics\Plot.h" />
+    <ClInclude Include="LeFixEnums.h" />
     <ClInclude Include="nativesExtended.h" />
     <ClInclude Include="Drone\PID.h" />
     <ClInclude Include="Drone\PID_Quat.h" />

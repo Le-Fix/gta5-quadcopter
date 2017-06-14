@@ -33,7 +33,7 @@ Clone *clone = nullptr;
 
 Gamepad gamepad;
 
-eEXIT currentExitCode = exitNo;
+LeFix::eEXIT currentExitCode = LeFix::exitNo;
 
 StickPlot stickPlot(&gamepad);
 CurvePlot curvePlot(&gamepad);
@@ -70,9 +70,9 @@ void initialize()
 	//Audio
 	AudioHandler::initialize();
 	AudioHandler::loadFile(audioPath50.c_str());
-	AudioHandler::createBuffer(mid);
+	AudioHandler::createBuffer(LeFix::mid);
 	AudioHandler::loadFile(audioPath80.c_str());
-	AudioHandler::createBuffer(hgh);
+	AudioHandler::createBuffer(LeFix::hgh);
 
 	Drone::applyDragThrust(); //Static
 
@@ -154,7 +154,7 @@ void update()
 		if (gamepad.button_cam)
 		{
 			Settings::camMode++;
-			if (Settings::camMode > LeFixDrone::camModeC3) Settings::camMode = 0;
+			if (Settings::camMode > LeFix::camModeC3) Settings::camMode = 0;
 			drone->applyCam();
 			clone->refreshCamMode();
 		}
@@ -167,17 +167,17 @@ void update()
 			GAMEPLAY::GET_MISSION_FLAG())
 		{
 			endFlightQuick();
-			currentExitCode = exitNo;
+			currentExitCode = LeFix::exitNo;
 		}
-		else if (currentExitCode == exitNo)
+		else if (currentExitCode == LeFix::exitNo)
 		{
 			updateMenu();
-			if (currentExitCode != exitNo)
+			if (currentExitCode != LeFix::exitNo)
 			{
 				menu.CloseMenu();
 				onMenuExit();
-				endFlight(currentExitCode == exitStart);
-				currentExitCode = exitNo;
+				endFlight(currentExitCode == LeFix::exitStart);
+				currentExitCode = LeFix::exitNo;
 			}
 		}
 	}
@@ -236,12 +236,12 @@ void updateMenu()
 		{
 			switch (Settings::camMode)
 			{
-			case LeFixDrone::camModeD1:
-			case LeFixDrone::camModeD3:
-			case LeFixDrone::camModeDF:
+			case LeFix::camModeD1:
+			case LeFix::camModeD3:
+			case LeFix::camModeDF:
 				d = true;
 				break;
-			case LeFixDrone::camModeC1:
+			case LeFix::camModeC1:
 				c = true;
 				break;
 			}
@@ -250,19 +250,19 @@ void updateMenu()
 		//Specific Camera Settings
 		switch (Settings::camMode)
 		{
-			case LeFixDrone::camModeD1 :
+			case LeFix::camModeD1 :
 				d = d || menu.IntOption("Field of View", &Settings::camDrone1FOV, 60, 120);
 				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone1Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
 				break;
-			case LeFixDrone::camModeD3:
+			case LeFix::camModeD3:
 				d = d || menu.IntOption("Field of View", &Settings::camDrone3FOV, 60, 120);
 				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone3Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
 				d = d || menu.FloatOption("Camera Y Position", &Settings::camDrone3YPos, -5.0f, 0.0f, 0.05f);
 				d = d || menu.FloatOption("Camera Z Position", &Settings::camDrone3ZPos, -2.0f, 2.0f, 0.05f);
 				break;
-			case LeFixDrone::camModeDF:
+			case LeFix::camModeDF:
 				break;
-			case LeFixDrone::camModeC1:
+			case LeFix::camModeC1:
 				menu.IntOption("Field of View [Close]", &Settings::camClone1CloseFOV, 45, 120, 1, { "The FOV is dynamic. Sets the the FOV at a reference distance of 2 meters." });
 				menu.IntOption("Field of View [Far]", &Settings::camClone1FarFOV, 0, 45, 1, { "The FOV is dynamic. Sets the the FOV at an infinite distance." });
 				break;
@@ -369,11 +369,11 @@ void updateMenu()
 		//Options
 		if (menu.MenuOption("Go back to player", "dummy", { "Exit drone mode and go back to start location." }))
 		{
-			currentExitCode = exitStart;
+			currentExitCode = LeFix::exitStart;
 		}
 		if (menu.MenuOption("Teleport player here", "dummy", { "Exit drone mode but teleport player to current location." }))
 		{
-			currentExitCode = exitHere;
+			currentExitCode = LeFix::exitHere;
 		}
 	}
 
