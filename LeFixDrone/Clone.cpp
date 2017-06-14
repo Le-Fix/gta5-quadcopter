@@ -68,7 +68,7 @@ void Clone::refreshSettingsDynamic()
 
 void Clone::refreshCamMode()
 {
-	switch (Settings::camMode.get())
+	switch (Settings::camMode)
 	{
 	case camModeC1: CAM::SET_CAM_ACTIVE(cam1, true); CAM::RENDER_SCRIPT_CAMS(1, 0, 3000, false, false); break;
 	default: break;
@@ -198,5 +198,5 @@ float Clone::calculateFOV(float distance)
 	infFOV is (lower) hardlimit for FOV
 	*/
 
-	return RadToDeg( 2.0f*atan(2.0f/distance*tanf(DegToRad(float(Settings::camClone1CloseFOV.get() - Settings::camClone1InfFOV.get()))/2.0f)) ) + float(Settings::camClone1InfFOV.get());
+	return RadToDeg( 2.0f*atan(2.0f/distance*tanf(DegToRad(float(Settings::camClone1CloseFOV - Settings::camClone1FarFOV))/2.0f)) ) + float(Settings::camClone1FarFOV);
 }

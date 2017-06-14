@@ -36,7 +36,7 @@ void DroneControllerLevel::update(const DroneState &currentState, const float &s
 	//Update end state
 	endHeading += DegToRad(180.0f) * inputYaw * dT;
 
-	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel.get()*0.8f;
+	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel*0.8f;
 
 	Quaternionf idleRot = Quaternionf(AngleAxisf(endHeading, up));
 	endPos += idleRot._transformVector(relDeltaPos);
@@ -57,7 +57,7 @@ void DroneControllerLevel::update(const DroneState &currentState, const float &s
 	calcThrottle = 0.5f*(calcThrottle + output.dot(currentState.rot._transformVector(Vector3f(0.0, 0.0, 1.0f))));
 
 	//Negative throttle
-	if (!Settings::drone3DFly.get() && calcThrottle < 0.0f) calcThrottle = 0.0f;
+	if (!Settings::drone3DFly && calcThrottle < 0.0f) calcThrottle = 0.0f;
 }
 
 Quaternionf DroneControllerLevel::getDesiredRot()

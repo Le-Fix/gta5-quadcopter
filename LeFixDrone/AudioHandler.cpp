@@ -218,9 +218,9 @@ void AudioHandler::setSourceSound(int prop, float speed)
 		if (gain < 0.0f) gain = 0.0f;
 		gain *= (1.0f - (speed - 1.0f)*(speed - 1.0f)); //Global volume curve
 
-		gain *= Settings::audioVolume.get(); //Global volume setting
+		gain *= Settings::audioVolume; //Global volume setting
 
-		if (Settings::camMode.get() == camModeD1 || Settings::camMode.get() == camModeD3) gain *= 0.2f; //Cam drone too close, turn volum down
+		if (Settings::camMode == camModeD1 || Settings::camMode == camModeD3) gain *= 0.2f; //Cam drone too close, turn volum down
 
 
 		alSourcef(source[4*r+prop], AL_PITCH, pitch);
