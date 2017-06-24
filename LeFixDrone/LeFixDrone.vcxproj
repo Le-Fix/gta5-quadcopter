@@ -70,8 +70,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.asi</TargetExt>
-    <IncludePath>$(SolutionDir)\includes;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Programme\GitHub\GTAVMenuBase;D:\Programme\GitHub\ScriptHookV_SDK;$(SolutionDir)\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Programme\GitHub\ScriptHookV_SDK\lib;$(SolutionDir)\libraries;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.asi</TargetExt>
@@ -137,9 +138,11 @@
     <ClInclude Include="Graphics\ColorRGBA.h" />
     <ClInclude Include="Drone\Drone.h" />
     <ClInclude Include="Cams\IndieCam.h" />
-    <ClInclude Include="GTAVMenuBase\menu.h" />
-    <ClInclude Include="GTAVMenuBase\menucontrols.h" />
-    <ClInclude Include="GTAVMenuBase\menukeyboard.h" />
+    <ClInclude Include="..\..\GTAVMenuBase\menu.h" />
+    <ClInclude Include="..\..\GTAVMenuBase\menucontrols.h" />
+    <ClInclude Include="..\..\GTAVMenuBase\menukeyboard.h" />
+    <ClInclude Include="..\..\GTAVMenuBase\menuutils.h" />
+    <ClInclude Include="..\..\GTAVMenuBase\menusettings.h" />
     <ClInclude Include="Input\Gamepad.h" />
     <ClInclude Include="LeFixDrone.h" />
     <ClInclude Include="Graphics\Plot.h" />
@@ -167,9 +170,11 @@
     <ClCompile Include="Graphics\ColorRGBA.cpp" />
     <ClCompile Include="Drone\Drone.cpp" />
     <ClCompile Include="Cams\IndieCam.cpp" />
-    <ClCompile Include="GTAVMenuBase\menu.cpp" />
-    <ClCompile Include="GTAVMenuBase\menucontrols.cpp" />
-    <ClCompile Include="GTAVMenuBase\menukeyboard.cpp" />
+    <ClCompile Include="..\..\GTAVMenuBase\menu.cpp" />
+    <ClCompile Include="..\..\GTAVMenuBase\menucontrols.cpp" />
+    <ClCompile Include="..\..\GTAVMenuBase\menukeyboard.cpp" />
+    <ClCompile Include="..\..\GTAVMenuBase\menuutils.cpp" />
+    <ClCompile Include="..\..\GTAVMenuBase\menusettings.cpp" />
     <ClCompile Include="Input\Gamepad.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Graphics\Plot.cpp" />

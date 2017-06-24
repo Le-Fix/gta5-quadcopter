@@ -1,6 +1,6 @@
 #pragma once
-#include "SHV\types.h"
-#include "SHV\natives.h"
+#include "inc\types.h"
+#include "inc\natives.h"
 
 #include "Utils\UIutils.hpp"
 

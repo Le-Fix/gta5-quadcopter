@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SHV\natives.h"
-#include "SHV\types.h"
+#include "inc\natives.h"
+#include "inc\types.h"
 #include <string>
 
 //Notification

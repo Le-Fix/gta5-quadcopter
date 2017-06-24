@@ -4,8 +4,7 @@
 
 #include <vector>
 
-#include "GTAVMenuBase\menu.h"
-#include "GTAVMenuBase\menucontrols.h"
+#include "menu.h"
 
 void ScriptMain();
 
@@ -14,6 +13,9 @@ void initialize();
 void update();
 void updateFlight();
 void updateMenu();
+
+void onMenuEnter();
+void onMenuExit();
 
 bool isAbleToStartFlight();
 

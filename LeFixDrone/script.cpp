@@ -1,12 +1,10 @@
 //Rotate Ped to get accurate bullet decals (tried, is strange)
 //Map scale
-//LightTrail
-//end location
 //switch to fpv and animate goggles
 
 #include "script.h"
 
-#include "SHV\main.h"
+#include "inc\main.h"
 
 #include "AudioHandler.h"
 #include "Clone.h"
@@ -14,10 +12,10 @@
 #include "Drone\Drone.h"
 #include "Input\Gamepad.h"
 
-#include "GTAVMenuBase\menukeyboard.h"
+#include <menu.h>
 
-#include "Utils\INIutils.hpp"
 #include "Utils\UIutils.hpp"
+#include "Utils\INIutils.hpp"
 
 #include "Graphics\CurvePlot.h"
 #include "Graphics\StickPlot.h"
@@ -26,7 +24,6 @@
 std::string modVersion = "v1.2";
 
 NativeMenu::Menu menu;
-NativeMenu::MenuControls menuControl;
 
 Drone *drone = nullptr;
 Clone *clone = nullptr;
@@ -45,22 +42,14 @@ void initialize()
 	std::string audioPath50 = GetCurrentModulePath() + "LeFixDrone\\AudioLow.wav";
 	std::string audioPath80 = GetCurrentModulePath() + "LeFixDrone\\AudioHigh.wav";
 
+	menu.SetFiles(path_settings_menu);
+	menu.RegisterOnMain(std::bind(onMenuEnter));
+	menu.RegisterOnExit(std::bind(onMenuExit));
+	menu.ReadSettings();
+
 	//Menu
-	menu.menux = 0.13f;
-	menu.menuy = 0.06f;
-
-	menuControl.ControllerButton1 = eControl::ControlFrontendAccept;
-	menuControl.ControllerButton2 = eControl::ControlFrontendCancel;
-
-	//menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuKey]		= str2key("SPACE"); % No keyboard assignment for entering menu
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuUp]		= NativeMenu::str2key("NUM8");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuDown]	= NativeMenu::str2key("NUM2");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuLeft]	= NativeMenu::str2key("NUM4");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuRight]	= NativeMenu::str2key("NUM6");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuSelect]	= NativeMenu::str2key("NUM5");
-	menuControl.ControlKeys[NativeMenu::MenuControls::ControlType::MenuCancel]	= NativeMenu::str2key("NUM0");
-
-	menu.LoadMenuTheme(std::wstring(path_settings_menu.begin(), path_settings_menu.end()).c_str());
+	menu.menuX = 0.13f;
+	menu.menuY = 0.06f;
 
 	//Settings
 	Settings::SetFile(path_settings_mod);
@@ -154,7 +143,7 @@ void update()
 		if (gamepad.button_cam)
 		{
 			Settings::camMode++;
-			if (Settings::camMode > LeFix::camModeC3) Settings::camMode = 0;
+			if (Settings::camMode > LeFix::camModeC1) Settings::camMode = 0;
 			drone->applyCam();
 			clone->refreshCamMode();
 		}
@@ -207,11 +196,12 @@ void updateFlight()
 
 void updateMenu()
 {
-	menu.CheckKeys(&menuControl, std::bind(onMenuEnter), std::bind(onMenuExit));
+	menu.CheckKeys();
 
 	if (menu.CurrentMenu("mainmenu")) {
-		menu.Title("Quadcopter Mod");
-		menu.FloatOption("Volume", &Settings::audioVolume, 0.0f, 1.0f, 0.1f, { "Global volume for all mod-related sounds." });
+		menu.Title("Quadcopter");
+		menu.Subtitle("v1.2 by LeFix");
+		menu.FloatOption("Volume", Settings::audioVolume, 0.0f, 1.0f, 0.1f, { "Global volume for all mod-related sounds." });
 		menu.MenuOption("Camera", "cameramenu", { "Settings for all camera modes." });
 		menu.MenuOption("Control", "controlmenu", { "Settings for conversion of gamepad output to drone input." });
 		menu.MenuOption("Drone", "dronemenu", { "Drone specific settings." });
@@ -223,16 +213,15 @@ void updateMenu()
 
 	if (menu.CurrentMenu("cameramenu")) {
 		//Title
-		menu.Title("Camera");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Camera");
 
 		//Apply bools
 		bool d = false;
 		bool c = false;
 
 		//Camera Mode
-		int temp = Settings::camMode;
-		menu.StringArray("Cam Mode", { "Drone 1st Person", "Drone 3rd Person", "Drone Follow", "Player Dynamic" }, &Settings::camMode, { "Choose your camera mode and adjust its specific settings. It can be changed with the assigned button GTA V." });
-		if (temp != Settings::camMode)
+		if (menu.StringArray("Cam Mode", { "Drone 1st Person", "Drone 3rd Person", "Drone Follow", "Player Dynamic" }, Settings::camMode, { "Choose your camera mode and adjust its specific settings. It can be changed with the assigned button GTA V." }))
 		{
 			switch (Settings::camMode)
 			{
@@ -251,20 +240,20 @@ void updateMenu()
 		switch (Settings::camMode)
 		{
 			case LeFix::camModeD1 :
-				d = d || menu.IntOption("Field of View", &Settings::camDrone1FOV, 60, 120);
-				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone1Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
+				d = d || menu.IntOption("Field of View", Settings::camDrone1FOV, 60, 120);
+				d = d || menu.IntOption("Camera Tilt", Settings::camDrone1Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
 				break;
 			case LeFix::camModeD3:
-				d = d || menu.IntOption("Field of View", &Settings::camDrone3FOV, 60, 120);
-				d = d || menu.IntOption("Camera Tilt", &Settings::camDrone3Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
-				d = d || menu.FloatOption("Camera Y Position", &Settings::camDrone3YPos, -5.0f, 0.0f, 0.05f);
-				d = d || menu.FloatOption("Camera Z Position", &Settings::camDrone3ZPos, -2.0f, 2.0f, 0.05f);
+				d = d || menu.IntOption("Field of View", Settings::camDrone3FOV, 60, 120);
+				d = d || menu.IntOption("Camera Tilt", Settings::camDrone3Tilt, -90, 90, 1, { "To compensate the attack angle and better match the actual flight direction. For racing around 30." });
+				d = d || menu.FloatOption("Camera Y Position", Settings::camDrone3YPos, -5.0f, 0.0f, 0.05f);
+				d = d || menu.FloatOption("Camera Z Position", Settings::camDrone3ZPos, -2.0f, 2.0f, 0.05f);
 				break;
 			case LeFix::camModeDF:
 				break;
 			case LeFix::camModeC1:
-				menu.IntOption("Field of View [Close]", &Settings::camClone1CloseFOV, 45, 120, 1, { "The FOV is dynamic. Sets the the FOV at a reference distance of 2 meters." });
-				menu.IntOption("Field of View [Far]", &Settings::camClone1FarFOV, 0, 45, 1, { "The FOV is dynamic. Sets the the FOV at an infinite distance." });
+				menu.IntOption("Field of View [Close]", Settings::camClone1CloseFOV, 45, 120, 1, { "The FOV is dynamic. Sets the the FOV at a reference distance of 2 meters." });
+				menu.IntOption("Field of View [Far]", Settings::camClone1FarFOV, 0, 45, 1, { "The FOV is dynamic. Sets the the FOV at an infinite distance." });
 				break;
 		}
 
@@ -275,19 +264,20 @@ void updateMenu()
 
 	if (menu.CurrentMenu("controlmenu")) {
 		//Title
-		menu.Title("Control");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Control");
 
 		//Apply bools
 		bool b = false;
 
 		//Options
-		b = b || menu.FloatOption("RC Rate PR",	&Settings::contRcRatePR,	0.1f, 3.0f, 0.1f, { "Linear factor for Pitch and Roll." });
-		b = b || menu.FloatOption("RC Rate Y",	&Settings::contRcRateY,		0.1f, 3.0f, 0.1f, { "Linear factor for Yaw." });
-		b = b || menu.FloatOption("Expo PR",	&Settings::contExpoPR,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
-		b = b || menu.FloatOption("Expo Y",		&Settings::contExpoY,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
-		b = b || menu.FloatOption("Rate P(itch)",&Settings::contRateP,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
-		b = b || menu.FloatOption("Rate R(oll)",&Settings::contRateR,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
-		b = b || menu.FloatOption("Rate Y(aw)",	&Settings::contRateY,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		b = b || menu.FloatOption("RC Rate PR",	Settings::contRcRatePR,	0.1f, 3.0f, 0.1f, { "Linear factor for Pitch and Roll." });
+		b = b || menu.FloatOption("RC Rate Y",	Settings::contRcRateY,		0.1f, 3.0f, 0.1f, { "Linear factor for Yaw." });
+		b = b || menu.FloatOption("Expo PR",	Settings::contExpoPR,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
+		b = b || menu.FloatOption("Expo Y",		Settings::contExpoY,		0.0f, 1.0f, 0.02f, { "Vary linear and cubic portion of curve which affects small inputs but doesn't the change max rotation velocity." });
+		b = b || menu.FloatOption("Rate P(itch)",Settings::contRateP,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		b = b || menu.FloatOption("Rate R(oll)",Settings::contRateR,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
+		b = b || menu.FloatOption("Rate Y(aw)",	Settings::contRateY,		0.0f, 0.98f, 0.02f, { "Greatly increases maximum rotation velocity without changing curve at low inputs alot.", "Also known as super expo." });
 		
 		//Apply changes
 		if(b) curvePlot.refreshData();
@@ -298,7 +288,8 @@ void updateMenu()
 	
 	if (menu.CurrentMenu("dronemenu")) {
 		//Title
-		menu.Title("Drone");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Drone");
 
 		//Apply bools
 		bool m = false;
@@ -306,11 +297,11 @@ void updateMenu()
 		bool c = false;
 
 		//Options
-		m = m || menu.FloatOption("Mass",			&Settings::droneMass,		 0.1f,  10.0f, 0.1f, { "Drone mass" });
-		s = s || menu.FloatOption("Max rel. Load",	&Settings::droneMaxRelLoad,	 0.0f,   5.0f, 0.1f, { "Maximum extra load the drone is capable to carry." });
-		s = s || menu.FloatOption("Max Velocity",	&Settings::droneMaxVel,		10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity the drone can achieve. Implicitly determines the drag coefficient." });
-		         menu.BoolOption("3D Flying",		&Settings::drone3DFly,		{ "Enables downward/reverse thrust." });
-		c = c || menu.BoolOption("Acro Mode",		&Settings::droneAcroMode,	{ "Enables direct control mode especially for racing." });
+		m = m || menu.FloatOption("Mass",			Settings::droneMass,		 0.1f,  10.0f, 0.1f, { "Drone mass" });
+		s = s || menu.FloatOption("Max rel. Load",	Settings::droneMaxRelLoad,	 0.0f,   5.0f, 0.1f, { "Maximum extra load the drone is capable to carry." });
+		s = s || menu.FloatOption("Max Velocity",	Settings::droneMaxVel,		10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity the drone can achieve. Implicitly determines the drag coefficient." });
+		         menu.BoolOption("3D Flying",		Settings::drone3DFly,		{ "Enables downward/reverse thrust." });
+		c = c || menu.BoolOption("Acro Mode",		Settings::droneAcroMode,	{ "Enables direct control mode especially for racing." });
 		
 		//Apply Changes
 		if (m) drone->applyCollider();
@@ -321,22 +312,24 @@ void updateMenu()
 	if (menu.CurrentMenu("gamepadmenu"))
 	{
 		//Title
-		menu.Title("Gamepad");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Gamepad");
 
 		//Options
-		menu.BoolOption("Vibration", &Settings::gamepadVib, { "Toggle gamepad vibration.", "(Heavy collisions)" });
-		menu.BoolOption("Using inverted cam [GTA5]", &Settings::gamepadInvPitch, { "Enabling inverted camera in the GTA5 options will invert the pitch input, this setting will invert it again." });
+		menu.BoolOption("Vibration", Settings::gamepadVib, { "Toggle gamepad vibration.", "(Heavy collisions)" });
+		menu.BoolOption("Using inverted cam [GTA5]", Settings::gamepadInvPitch, { "Enabling inverted camera in the GTA5 options will invert the pitch input, this setting will invert it again." });
 	}
 
 	if (menu.CurrentMenu("physxmenu"))
 	{
 		//Title
-		menu.Title("Physics");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Physics");
 
 		//Options
-		bool g = menu.FloatOption("Gravity Scale", &Settings::physxGScale, 0.5f, 2.0f, 0.1f, { "Simple gravity multiplier. For fast outdoor flying >1 is probably more fun and for indoor flying <1 is probably easier." });
-		bool c = menu.BoolOption("Collision", &Settings::physxColl, { "Toggle drone collision." });
-		menu.BoolOption("Use PID", &Settings::pidEnable, {"The desired rotation of the drone is achieved by a PID Controller in real world. When disabled the rotation gets set, undermines physics."});
+		bool g = menu.FloatOption("Gravity Scale", Settings::physxGScale, 0.5f, 2.0f, 0.1f, { "Simple gravity multiplier. For fast outdoor flying >1 is probably more fun and for indoor flying <1 is probably easier." });
+		bool c = menu.BoolOption("Collision", Settings::physxColl, { "Toggle drone collision." });
+		menu.BoolOption("Use PID", Settings::pidEnable, {"The desired rotation of the drone is achieved by a PID Controller in real world. When disabled the rotation gets set, undermines physics."});
 
 		//Apply Changes
 		if (g) Drone::applyDragThrust();
@@ -346,16 +339,17 @@ void updateMenu()
 	if (menu.CurrentMenu("visualmenu"))
 	{
 		//Title
-		menu.Title("Visual");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Visual");
 
 		//Apply Bools
 		bool v = false;
 
 		//Options
-		menu.BoolOption("Sticks", &Settings::showStickCam, { "Prints the stick position on the bottom of the screen. Intended for screen capture." });
-		v = v || menu.BoolOption("Trails", &Settings::showTrails, { "Adds some particle effects at the prop positions." });
-		v = v || menu.BoolOption("Collision Box Visible", &Settings::showCollider, { "Visibility of the collision box model, which is does all the physics." });
-		v = v || menu.BoolOption("Drone Model Visible", &Settings::showModel, { "Visibility of the drone model, which is attached to the collsion box." });
+		menu.BoolOption("Sticks", Settings::showStickCam, { "Prints the stick position on the bottom of the screen. Intended for screen capture." });
+		v = v || menu.BoolOption("Trails", Settings::showTrails, { "Adds some particle effects at the prop positions." });
+		v = v || menu.BoolOption("Collision Box Visible", Settings::showCollider, { "Visibility of the collision box model, which is does all the physics." });
+		v = v || menu.BoolOption("Drone Model Visible", Settings::showModel, { "Visibility of the drone model, which is attached to the collsion box." });
 
 		//Apply
 		if (v) drone->applyVisual();
@@ -364,7 +358,8 @@ void updateMenu()
 	if (menu.CurrentMenu("exitmenu"))
 	{
 		//Title
-		menu.Title("Exit");
+		menu.Title("Quadcopter");
+		menu.Subtitle("Exit");
 
 		//Options
 		if (menu.MenuOption("Go back to player", "dummy", { "Exit drone mode and go back to start location." }))

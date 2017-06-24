@@ -67,7 +67,7 @@ void DroneControllerLevel::updateEndState(const float &inputX, const float &inpu
 	//Relative Position Delta
 	Vector3f relDeltaPos = Vector3f(inputX, inputY, inputZ)*dT*Settings::droneMaxVel*0.8f;
 
-	if (Settings::camMode == LeFix::camModeC1)
+	if (Settings::camMode == LeFix::camModeC1 || Settings::camMode == LeFix::camModeDF)
 	{
 		//Idle Quaternion
 		Camera currentCam = CAM::GET_RENDERING_CAM();

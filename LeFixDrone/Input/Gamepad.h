@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SHV\natives.h"
-#include "SHV\enums.h"
+#include "inc\natives.h"
+#include "inc\enums.h"
 #include "..\Settings.h"
 
 class Gamepad

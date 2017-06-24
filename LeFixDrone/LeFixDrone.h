@@ -4,9 +4,9 @@
 #define NUM_RPM 2
 #define _USE_MATH_DEFINES
 
-#include "SHV\types.h"
-#include "SHV\natives.h"
-#include "SHV\enums.h"
+#include "inc\types.h"
+#include "inc\natives.h"
+#include "inc\enums.h"
 
 #include <Eigen/Dense>
 #include <string>

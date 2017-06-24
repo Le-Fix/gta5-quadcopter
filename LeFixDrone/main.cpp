@@ -1,4 +1,4 @@
-#include "SHV\main.h"
+#include "inc\main.h"
 #include "script.h"
 
 BOOL APIENTRY DllMain(HMODULE hInstance, DWORD reason, LPVOID lpReserved)
