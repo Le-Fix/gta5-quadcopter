@@ -45,6 +45,7 @@ float Settings::droneMaxRelLoad = 2.6f;
 float Settings::droneMaxVel = 40.0f;
 bool Settings::drone3DFly = false;
 bool Settings::droneAcroMode = true;
+bool Settings::droneNoThrustDown = false;
 
 //PHYSICS
 float Settings::physxGScale = 1.0f;
@@ -94,6 +95,7 @@ void Settings::Save() {
 	settings.SetDoubleValue("DRONE", "mass", droneMass);
 	settings.SetDoubleValue("DRONE", "maxRelLoad", droneMaxRelLoad);
 	settings.SetDoubleValue("DRONE", "maxVel", droneMaxVel);
+	settings.SetBoolValue("DRONE", "zeroThrustDown", droneNoThrustDown);
 
 	//GAMEPAD
 	settings.SetBoolValue("GAMEPAD", "vibration", gamepadVib);
@@ -155,6 +157,7 @@ void Settings::Load() {
 	droneMass = settings.GetDoubleValue("DRONE", "mass", 0.8);
 	droneMaxRelLoad = settings.GetDoubleValue("DRONE", "maxRelLoad", 2.6);
 	droneMaxVel = settings.GetDoubleValue("DRONE", "maxVel", 40.0);
+	droneNoThrustDown = settings.GetBoolValue("DRONE", "zeroThrustDown", false);
 
 	//GAMEPAD
 	gamepadVib = settings.GetBoolValue("GAMEPAD", "vibration", true);

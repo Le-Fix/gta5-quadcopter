@@ -23,7 +23,10 @@ void DroneControllerAcro::update(const DroneState &currentState, const float &st
 	float inputThrottle =  stick_left_y;
 
 	//INPUT TO CONTROL
-	contThrottle = inputThrottle; //Linear
+	if (Settings::droneNoThrustDown)
+		contThrottle = (inputThrottle + 1.0f) / 2.0f; //Linear, No throttle at -1.0 input value
+	else
+		contThrottle = inputThrottle; //Linear
 
 	 //Negative throttle
 	if (!Settings::drone3DFly && contThrottle < 0.0f) contThrottle = 0.0f;

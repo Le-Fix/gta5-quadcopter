@@ -35,7 +35,7 @@ public:
 
 	//DRONE
 	static float droneMass, droneMaxRelLoad, droneMaxVel;
-	static bool drone3DFly, droneAcroMode;
+	static bool drone3DFly, droneAcroMode, droneNoThrustDown;
 
 	//PHYSICS
 	static float physxGScale;
