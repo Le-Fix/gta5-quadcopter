@@ -301,6 +301,7 @@ void updateMenu()
 		s = s || menu.FloatOption("Max rel. Load",	Settings::droneMaxRelLoad,	 0.0f,   5.0f, 0.1f, { "Maximum extra load the drone is capable to carry." });
 		s = s || menu.FloatOption("Max Velocity",	Settings::droneMaxVel,		10.0f, 200.0f, 1.0f, { "Maximum horizontal velocity the drone can achieve. Implicitly determines the drag coefficient." });
 		         menu.BoolOption("3D Flying",		Settings::drone3DFly,		{ "Enables downward/reverse thrust." });
+				 menu.BoolOption("No Thrust Stick Down", Settings::droneNoThrustDown, { "No thrust stick position is stick down." });
 		c = c || menu.BoolOption("Acro Mode",		Settings::droneAcroMode,	{ "Enables direct control mode especially for racing." });
 		
 		//Apply Changes
